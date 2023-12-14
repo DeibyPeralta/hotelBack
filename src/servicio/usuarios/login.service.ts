@@ -1,6 +1,7 @@
 import dbConfig from "../../config/dbConfig";
 import sql from "mssql";
 import bcrypt from "bcryptjs"; 
+import { generarToken } from '../../config/auth'
 
 const saltRounds = 10;
 
@@ -66,10 +67,14 @@ const login = async (correo: string, password: string) => {
                 data: 'Contraseña incorrecta'
             };
         }
+
+        const token = generarToken(user);
+        console.log(token);
+        console.log('logeado');
         
         return {
             isError: false,
-            data: user
+            data: token
         };
     } catch (error) {
         console.log("ERROR en la autenticación.");

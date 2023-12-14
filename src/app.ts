@@ -19,7 +19,7 @@ import tableroRoutes from './ruta/tablero/tablero.routes';
 app.use(bodyParser.json({limit:'500mb'}));
 app.use(bodyParser.urlencoded({ extended: false, limit:'500mb' }));
 
-app.use(express.static(path.join(__dirname, '..', 'images')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/usuarios', usuariosRoutes);
 app.use('/tablero', tableroRoutes);
