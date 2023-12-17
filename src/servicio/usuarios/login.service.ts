@@ -13,7 +13,7 @@ const registerUser = async (correo: string, password: string, nombre: string, ce
     try { 
         console.log('***** Registrando usuario en la base de datos *****');
 
-        const validate = await pool.query('select correo, cedula from usuarios');
+        const validate = await pool.query(`select cedula from usuarios where cedula = '${cedula}'`);
         const validateCedula = validate.rows.length > 0 ? validate.rows[0].cedula : 0;
         // console.log(validateCedula);
         // console.log('deiby');
