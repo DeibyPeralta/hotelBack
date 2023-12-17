@@ -9,8 +9,8 @@ const login = async (req: Request, res: Response) => {
         const password = req.body.password;
 
         const responde: any  = await loginService.login(correo, password);
-
-        return res.status(200).json(responde.data)
+      
+        return res.status(200).json(responde)
     } catch (error) {
         console.log("ERROR ");
         console.log(error);
@@ -19,17 +19,17 @@ const login = async (req: Request, res: Response) => {
 }
 
 const registerUser = async (req: Request, res: Response) => {
-    try {
-        const correo = req.body.email;
+    try { 
+        const correo = req.body.correo;
         const password = req.body.password;
         const nombre = req.body.nombre;
         const cedula = req.body.cedula;
         const telefono = req.body.telefono;
-        const rol = req.body.rol;
+        const rol = 'admin';//req.body.rol;
 
         const responde: any  = await loginService.registerUser(correo, password, nombre, cedula, telefono, rol);
 
-        return res.status(200).json(responde.data)
+        return res.status(200).json(responde.message)
     } catch (error) {
         console.log("ERROR ");
         console.log(error);

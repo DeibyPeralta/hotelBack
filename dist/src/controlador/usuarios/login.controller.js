@@ -18,7 +18,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const correo = req.body.correo;
         const password = req.body.password;
         const responde = yield login_service_1.default.login(correo, password);
-        return res.status(200).json(responde.data);
+        return res.status(200).json(responde);
     }
     catch (error) {
         console.log("ERROR ");
@@ -28,14 +28,14 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const correo = req.body.email;
+        const correo = req.body.correo;
         const password = req.body.password;
         const nombre = req.body.nombre;
         const cedula = req.body.cedula;
         const telefono = req.body.telefono;
         const rol = req.body.rol;
         const responde = yield login_service_1.default.registerUser(correo, password, nombre, cedula, telefono, rol);
-        return res.status(200).json(responde.data);
+        return res.status(200).json(responde.message);
     }
     catch (error) {
         console.log("ERROR ");

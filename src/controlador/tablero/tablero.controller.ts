@@ -26,7 +26,7 @@ const maxhabitaciones = async (req: Request, res: Response) => {
 }
 
 const addTablero = async (req: Request, res: Response) => {
-    try { console.log(req.body);
+    try { 
         const interno = req.body.interno
         const num_habitacion = req.body.num_habitacion
         const hora_llegada = req.body.hora_llegada
@@ -60,7 +60,7 @@ const editarHabitaciones = async (req: Request, res: Response) => {
     try { 
 
         const body = req.body;
-
+       
         const response: any = await tableroService.editar_Habitaciones( body );
 
         return res.status(200).json(response.data);
@@ -126,6 +126,21 @@ const deleteHabitaciones = async (req: Request, res: Response) => {
     }
 }
 
+const editar_tablero = async (req: Request, res: Response) => {
+    try { 
+
+        const body = req.body;
+       
+        const response: any = await tableroService.editar_tablero( body );
+
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -136,4 +151,5 @@ export default {
     historialHabitaciones,
     historial,
     deleteHabitaciones,
+    editar_tablero
 }

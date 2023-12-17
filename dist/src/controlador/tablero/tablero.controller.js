@@ -37,7 +37,6 @@ const maxhabitaciones = (req, res) => __awaiter(void 0, void 0, void 0, function
 });
 const addTablero = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log(req.body);
         const interno = req.body.interno;
         const num_habitacion = req.body.num_habitacion;
         const hora_llegada = req.body.hora_llegada;
@@ -123,6 +122,18 @@ const deleteHabitaciones = (req, res) => __awaiter(void 0, void 0, void 0, funct
         throw error;
     }
 });
+const editar_tablero = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const body = req.body;
+        const response = yield tablero_service_1.default.editar_tablero(body);
+        return res.status(200).json(response.data);
+    }
+    catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+});
 exports.default = {
     vista,
     maxhabitaciones,
@@ -133,4 +144,5 @@ exports.default = {
     historialHabitaciones,
     historial,
     deleteHabitaciones,
+    editar_tablero
 };

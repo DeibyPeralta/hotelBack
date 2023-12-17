@@ -1,17 +1,16 @@
-import dbConfig from "../../config/dbConfig";
-import sql from "mssql";
+import dbConfig  from "../../config/dbConfig";
+const pool = dbConfig.pool;
 
 const vista = async () => {
     try {
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-            .query(`SELECT h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino
+        console.log('***** Añadiendo datos del tablero *****');
+    
+        const queryResult = await pool.query(`SELECT h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino
                         FROM habitaciones h LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion;`);
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al registrar usuario en la base de datos.");
@@ -22,14 +21,12 @@ const vista = async () => {
 
 const maxhabitaciones = async () => {
     try {
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-            .query(`SELECT MAX(num_habitacion) AS max_num_habitacion FROM habitaciones;`);
+        
+        const queryResult = await pool.query(`SELECT MAX(num_habitacion) AS max_num_habitacion FROM habitaciones;`);
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al registrar usuario en la base de datos.");
@@ -40,21 +37,14 @@ const maxhabitaciones = async () => {
 
 const addTablero = async (interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string) => {
     try {
-        const pool = await sql.connect(dbConfig);
+        console.log('***** Añadiendo datos del tablero *****');
 
-        const queryResult = await pool.request()
-            .input('interno', sql.VarChar, interno)
-            .input('num_habitacion', sql.VarChar, num_habitacion)
-            .input('hora_llegada', sql.VarChar, hora_llegada)
-            .input('aseo', sql.VarChar, aseo)
-            .input('llamada', sql.VarChar, llamada)
-            .input('destino', sql.VarChar, destino)
-            .query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino)
-                    VALUES (@interno, @num_habitacion, @hora_llegada, @aseo, @llamada, @destino);`);
+        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino)
+                    VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}'); `)
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al registrar en el tablero.");
@@ -65,14 +55,11 @@ const addTablero = async (interno: string, num_habitacion: string, hora_llegada:
 
 const habitaciones = async () => {
     try {
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-            .query(`select estado, num_habitacion, comentario from habitaciones;`);
+        const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones;`);
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al registrar usuario en la base de datos.");
@@ -83,14 +70,9 @@ const habitaciones = async () => {
 
 const editar_Habitaciones = async ( body: any ) => {
     try { 
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-                .input('estado', sql.VarChar, body.estado)
-                .input('comentario', sql.VarChar, body.comentario)
-                .input('num_habitacion', sql.Int, body.num_habitacion)
-                .query(`UPDATE habitaciones SET estado = @estado, comentario = @comentario
-                 WHERE num_habitacion = @num_habitacion; `);
+     
+        const queryResult = await pool.query(`UPDATE habitaciones SET estado = '${body.estado}', comentario = '${body.comentario}'
+                 WHERE num_habitacion = ${body.num_habitacion}; `);
 
         return {
             isError: false,
@@ -105,14 +87,10 @@ const editar_Habitaciones = async ( body: any ) => {
 
 const addHabitaciones = async ( body: any ) => {
     try {
-        const pool = await sql.connect(dbConfig);
+        console.log('***** Añadiendo datos del tablero *****');
 
-        const queryResult = await pool.request()
-            .input('estado', sql.VarChar, body.estado)
-            .input('num_habitacion', sql.Int, body.num_habitacion)
-            .input('comentario', sql.VarChar, body.comentario)
-            .query(`INSERT INTO habitaciones (estado, num_habitacion, comentario)
-                    VALUES (@estado, @num_habitacion, @comentario);`);
+        const queryResult = await pool.query(`INSERT INTO habitaciones (estado, num_habitacion, comentario)
+                    VALUES ('${body.estado}', ${body.num_habitacion}, '${body.comentario}');`);
                  
         return {
             isError: false,
@@ -127,21 +105,9 @@ const addHabitaciones = async ( body: any ) => {
 
 const historialHabitaciones = async ( body: any ) => {
     try {
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-            .input('interno', sql.VarChar, body.interno)
-            .input('num_habitacion', sql.Int, body.num_habitacion)
-            .input('hora_llegada', sql.VarChar, body.hora_llegada)
-            .input('aseo', sql.VarChar, body.aseo)
-            .input('llamada', sql.VarChar, body.llamada)
-            .input('destino', sql.VarChar, body.destino)
-            .input('valor', sql.Int, body.valor)
-            .input('comentario', sql.VarChar, body.comentario)
-            .input('hora_salida', sql.VarChar, body.hora_salida)
-            .input('fecha', sql.VarChar, body.fechaSalida)
-            .query(`INSERT INTO historial( interno, num_habitacion,  hora_llegada, aseo, llamada, destino, valor, comentario, hora_salida, fecha )
-                    VALUES (@interno, @num_habitacion, @hora_llegada, @aseo, @llamada, @destino, @valor, @comentario, @hora_salida, @fecha );`);
+        
+          const queryResult = await pool.query(`INSERT INTO historial( interno, num_habitacion,  hora_llegada, aseo, llamada, destino, valor, comentario, hora_salida, fecha )
+                    VALUES ('${body.interno}', ${body.num_habitacion}, '${body.hora_llegada}', '${body.aseo}', '${body.llamada}', '${body.destino}', '${body.valor}', '${body.comentario}', '${body.hora_salida}', '${body.fecha}' );`);
                  
         return {
             isError: false,
@@ -156,14 +122,12 @@ const historialHabitaciones = async ( body: any ) => {
 
 const historial = async ( ) => {
     try {
-        const pool = await sql.connect(dbConfig);
-
-        const queryResult = await pool.request()
-            .query(`select * from historial;`);
+       
+        const queryResult = await pool.query(`select * from historial;`);
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al registrar usuario en la base de datos.");
@@ -174,15 +138,13 @@ const historial = async ( ) => {
 
 const deleteHabitaciones = async ( num_habitacion: any ) => {
     try {
-        const pool = await sql.connect(dbConfig);
+        // const pool = await sql.connect(dbConfig);
         
-        const queryResult = await pool.request()
-            .input('num_habitacion', sql.Int, num_habitacion)
-            .query(`delete from tablero where num_habitacion = @num_habitacion;`);
+        const queryResult = await pool.query(`delete from tablero where num_habitacion = ${num_habitacion};`);
 
         return {
             isError: false,
-            data: queryResult.recordset
+            data: queryResult.rows
         };
     } catch (error) {
         console.log("ERROR al eliminar huesped de la habitacion.");
@@ -190,6 +152,25 @@ const deleteHabitaciones = async ( num_habitacion: any ) => {
         throw error;
     }
 }
+
+const editar_tablero = async ( body: any ) => {
+    try { 
+     console.log(body);
+        const queryResult = await pool.query(`UPDATE tablero SET  hora_llegada = '${body.hora_llegada}', aseo = '${body.aseo}',
+            llamada = '${body.llamada}', destino = '${body.destino}'
+            WHERE  num_habitacion = ${body.num_habitacion} OR interno = '${body.interno}'; `);
+
+        return {
+            isError: false,
+            data: 'ok'
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
 
 export default {
     vista,
@@ -200,5 +181,6 @@ export default {
     addHabitaciones,
     historialHabitaciones,
     historial,
-    deleteHabitaciones
+    deleteHabitaciones,
+    editar_tablero
 }

@@ -15,4 +15,5 @@ router.post('/add-habitaciones', tablero_controller_1.default.addHabitaciones);
 router.delete('/eliminar-habitaciones/:num_habitacion', tablero_controller_1.default.deleteHabitaciones);
 router.post('/historial-habitaciones', tablero_controller_1.default.historialHabitaciones);
 router.get('/historial', tablero_controller_1.default.historial);
+router.post('/editar_tablero', tablero_controller_1.default.editar_tablero);
 exports.default = router;
