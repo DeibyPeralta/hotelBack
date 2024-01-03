@@ -1,5 +1,5 @@
 
-import { Request, Response } from "express";
+import { Request, Response, response } from "express";
 import loginService from '../../servicio/usuarios/login.service';
 
 
@@ -8,9 +8,12 @@ const login = async (req: Request, res: Response) => {
         const correo = req.body.correo;
         const password = req.body.password;
 
-        const responde: any  = await loginService.login(correo, password);
-      
-        return res.status(200).json(responde)
+        const response: any  = await loginService.login(correo, password);
+        // console.log(response);
+            if(response.isError == true){
+                return res.status(500).json(response)
+            }
+        return res.status(200).json(response)
     } catch (error) {
         console.log("ERROR ");
         console.log(error);

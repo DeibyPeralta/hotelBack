@@ -48,10 +48,10 @@ const login = async (correo: string, password: string) => {
         console.log('***** Iniciando sesión *****');
         
         // Buscar el usuario por correo
-        const queryResult = await pool.query(`SELECT * FROM usuarios;`);
-
+        const queryResult = await pool.query(`SELECT * FROM usuarios where correo = '${correo}' ;`);
+        // console.log(queryResult.rows);
         if (queryResult.rows.length === 0) {
-            return {
+            return { 
                 isError: true,
                 data: 'Usuario no encontrado'
             };
@@ -61,7 +61,8 @@ const login = async (correo: string, password: string) => {
 
         // Comparar la contraseña ingresada con la almacenada en la base de datos
         const passwordMatch = await bcrypt.compare(password, user.password);
- 
+        // console.log(passwordMatch);
+        // console.log('deiby');
         if (!passwordMatch) {
             return {
                 isError: true,
@@ -70,7 +71,7 @@ const login = async (correo: string, password: string) => {
         }
 
         const token = generarToken(user);
-        
+        // console.log(token);
         return {
             isError: false,
             message: token

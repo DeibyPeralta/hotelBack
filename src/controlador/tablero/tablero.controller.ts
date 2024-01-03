@@ -34,7 +34,11 @@ const addTablero = async (req: Request, res: Response) => {
         const llamada = req.body.llamada
         const destino = req.body.destino
 
-        const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino);
+        const fechaActual = new Date();
+        const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
+
+        console.log(fechaFormateada);
+        const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada);
 
         return res.status(200).json(response.data);
     } catch (error) {

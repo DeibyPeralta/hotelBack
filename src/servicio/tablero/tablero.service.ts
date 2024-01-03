@@ -7,7 +7,7 @@ const vista = async () => {
     
         const queryResult = await pool.query(`SELECT h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino
                         FROM habitaciones h LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion;`);
-
+ 
         return {
             isError: false,
             data: queryResult.rows
@@ -35,12 +35,12 @@ const maxhabitaciones = async () => {
     }
 }
 
-const addTablero = async (interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string) => {
+const addTablero = async (interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any) => {
     try {
         console.log('***** Añadiendo datos del tablero *****');
 
-        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino)
-                    VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}'); `)
+        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaLlegada)
+                    VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}', '${fecha_llegada}'); `)
 
         return {
             isError: false,
