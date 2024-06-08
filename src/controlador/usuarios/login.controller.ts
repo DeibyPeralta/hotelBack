@@ -9,9 +9,9 @@ const login = async (req: Request, res: Response) => {
         const password = req.body.password;
 
         const response: any  = await loginService.login(correo, password);
-        // console.log(response);
+        
             if(response.isError == true){
-                return res.status(500).json(response)
+                return res.status(200).json(response)
             }
         return res.status(200).json(response)
     } catch (error) {
@@ -28,8 +28,8 @@ const registerUser = async (req: Request, res: Response) => {
         const nombre = req.body.nombre;
         const cedula = req.body.cedula;
         const telefono = req.body.telefono;
-        const rol = 'admin';//req.body.rol;
-
+        const rol = '1';//req.body.rol;
+        
         const responde: any  = await loginService.registerUser(correo, password, nombre, cedula, telefono, rol);
 
         return res.status(200).json(responde.message)

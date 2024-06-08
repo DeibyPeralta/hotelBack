@@ -105,7 +105,7 @@ const addHabitaciones = async ( body: any ) => {
 
 const historialHabitaciones = async ( body: any ) => {
     try {
-        
+        console.log(body);
           const queryResult = await pool.query(`INSERT INTO historial( interno, num_habitacion,  hora_llegada, aseo, llamada, destino, valor, comentario, hora_salida, fecha )
                     VALUES ('${body.interno}', ${body.num_habitacion}, '${body.hora_llegada}', '${body.aseo}', '${body.llamada}', '${body.destino}', '${body.valor}', '${body.comentario}', '${body.hora_salida}', '${body.fecha}' );`);
                  

@@ -49,7 +49,7 @@ const login = async (correo: string, password: string) => {
         
         // Buscar el usuario por correo
         const queryResult = await pool.query(`SELECT * FROM usuarios where correo = '${correo}' ;`);
-        // console.log(queryResult.rows);
+        console.log(queryResult.rows);
         if (queryResult.rows.length === 0) {
             return { 
                 isError: true,
