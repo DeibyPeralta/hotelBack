@@ -105,9 +105,12 @@ const addHabitaciones = async ( body: any ) => {
 
 const historialHabitaciones = async ( body: any ) => {
     try {
-        console.log(body);
-          const queryResult = await pool.query(`INSERT INTO historial( interno, num_habitacion,  hora_llegada, aseo, llamada, destino, valor, comentario, hora_salida, fecha )
-                    VALUES ('${body.interno}', ${body.num_habitacion}, '${body.hora_llegada}', '${body.aseo}', '${body.llamada}', '${body.destino}', '${body.valor}', '${body.comentario}', '${body.hora_salida}', '${body.fecha}' );`);
+
+        console.log(body)
+        body.fecha = getCurrentDateTime();
+        console.log(body)
+        const queryResult = await pool.query(`INSERT INTO historial( num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, comentario, socio, fechaSalida, destino, hora_salida, fecha )
+                    VALUES ('${body.num_habitacion}', '${body.hora_llegada}', '${body.llamada}', '${body.interno}', '${body.placa}', '${body.aseo}', '${body.valor_hospedaje}', '${body.valor_lavado}', '${body.valor_parqueo}', '${body.num_factura}', '${body.valor_factura}', '${body.comentario}', '${body.socio}', '${body.fechaSalida}', '${body.destino}', '${body.hora_salida}', '${body.fecha}' );`);
                  
         return {
             isError: false,
@@ -119,6 +122,17 @@ const historialHabitaciones = async ( body: any ) => {
         throw error;
     }
 }
+
+function getCurrentDateTime(): string {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Enero es 0!
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
 
 const historial = async ( ) => {
     try {
