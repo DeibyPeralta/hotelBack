@@ -39,7 +39,7 @@ const addTablero = async (req: Request, res: Response) => {
 
         console.log(fechaFormateada);
         const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada);
-
+        
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");

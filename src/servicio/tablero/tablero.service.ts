@@ -6,7 +6,7 @@ const vista = async () => {
         console.log('***** Añadiendo datos del tablero *****');
     
         const queryResult = await pool.query(`SELECT h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino
-                        FROM habitaciones h LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion;`);
+                        FROM habitaciones h LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion ORDER BY NUM_HABITACION;`);
  
         return {
             isError: false,
@@ -42,6 +42,8 @@ const addTablero = async (interno: string, num_habitacion: string, hora_llegada:
         const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaLlegada)
                     VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}', '${fecha_llegada}'); `)
 
+        const queryResut2 = await pool.query(`UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = '${num_habitacion}' `);
+    
         return {
             isError: false,
             data: queryResult.rows
@@ -55,7 +57,7 @@ const addTablero = async (interno: string, num_habitacion: string, hora_llegada:
 
 const habitaciones = async () => {
     try {
-        const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones;`);
+        const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones order by num_habitacion;`);
 
         return {
             isError: false,
@@ -111,7 +113,9 @@ const historialHabitaciones = async ( body: any ) => {
         console.log(body)
         const queryResult = await pool.query(`INSERT INTO historial( num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, comentario, socio, fechaSalida, destino, hora_salida, fecha )
                     VALUES ('${body.num_habitacion}', '${body.hora_llegada}', '${body.llamada}', '${body.interno}', '${body.placa}', '${body.aseo}', '${body.valor_hospedaje}', '${body.valor_lavado}', '${body.valor_parqueo}', '${body.num_factura}', '${body.valor_factura}', '${body.comentario}', '${body.socio}', '${body.fechaSalida}', '${body.destino}', '${body.hora_salida}', '${body.fecha}' );`);
-                 
+                    
+        const queryResut2 = await pool.query(`UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = '${body.num_habitacion}' `);         
+
         return {
             isError: false,
             data: 'Registro exitoso'
@@ -137,7 +141,7 @@ function getCurrentDateTime(): string {
 const historial = async ( ) => {
     try {
        
-        const queryResult = await pool.query(`select * from historial;`);
+        const queryResult = await pool.query(`select * from historial h left join socios s on h.socio = s.cod_socio order by h.id;`);
 
         return {
             isError: false,
