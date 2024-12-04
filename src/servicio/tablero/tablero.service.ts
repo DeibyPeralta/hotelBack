@@ -151,7 +151,7 @@ function getCurrentDateTime(): string {
 const historial = async ( ) => {
     try {
        
-        const queryResult = await pool.query(`select * from historial h left join socios s on h.cod_Socio = s.cod_socio order by h.id;`);
+        const queryResult = await pool.query(`SELECT * FROM historial h LEFT JOIN socios s ON h.cod_Socio = s.cod_socio ORDER by h.fechasistema DESC;`);
 
         return {
             isError: false,
