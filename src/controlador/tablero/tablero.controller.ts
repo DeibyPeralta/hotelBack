@@ -92,11 +92,17 @@ const addHabitaciones = async (req: Request, res: Response) => {
 
 const historialHabitaciones = async (req: Request, res: Response) => {
     try { 
-        
-        const body = req.body; 
+        console.log(req.body.socio)
+        const validateSocio = await tableroService.validateSocio(req.body.socio)
+   
+        if (validateSocio.isError || !validateSocio.data) {
+            return res.status(404).json({  
+                isError: true,
+                message: "Socio no encontrado o inválido" });
+        }
+    
+        const response: any = await tableroService.historialHabitaciones(req.body);
 
-        const response: any = await tableroService.historialHabitaciones( body );
-        console.log(response)
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
