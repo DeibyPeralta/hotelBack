@@ -17,9 +17,8 @@ const updateSocios = async(req: Request, res: Response) => {
         const sheet = workbook.Sheets[sheetNames[0]]; 
 
         const data = xlsx.utils.sheet_to_json(sheet);
-        
+
         const response: any = await sociosService.updateSocios(data);
-          console.log(response)
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
@@ -44,9 +43,9 @@ const getsocios = async(req: Request, res: Response) => {
 const updateSocio = async(req: Request, res: Response) => {
     try {
         console.log(req.body)
-        // const response: any = await sociosService.updateSocio(req.body);
+        const response: any = await sociosService.updateSocio(req.body);
 
-        // return res.status(200).json(response.data);
+        return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
         console.log(error);

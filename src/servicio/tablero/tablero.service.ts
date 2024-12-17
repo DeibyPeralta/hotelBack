@@ -36,13 +36,12 @@ const maxhabitaciones = async () => {
 }
 
 const addTablero = async (interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any) => {
-    try {
-        console.log('***** Añadiendo datos del tablero *****');
+    try { 
 
-        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaLlegada)
+        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada)
                     VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}', '${fecha_llegada}'); `)
 
-        const queryResut2 = await pool.query(`UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = '${num_habitacion}' `);
+        await pool.query(`UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = '${num_habitacion}' `);
     
         return {
             isError: false,
