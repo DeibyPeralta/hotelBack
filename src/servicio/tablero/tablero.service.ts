@@ -329,20 +329,26 @@ const totalEfectivo = async ( ) => {
 const efectivo = async (body: any) => {
     try {
 
-        const baseString = body.efectivoDelDia.replace('$', '').replace(/\s/g, ''); 
+        const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, ''); 
+        const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.')); 
+        const baseString = body.base.replace('$', '').replace(/\s/g, ''); 
         const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.')); 
-
+        const totalString = body.total.replace('$', '').replace(/\s/g, ''); 
+        const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.')); 
+  
         const processedData = {
-            base: parseInt(body.base.replace(/,/g, ''), 10),
-            efectivoDelDia: baseNumber,
-            total: body.total
+            base: baseNumber,
+            efectivoDelDia: efectivoNumber,
+            total: totalNumber
         };
-        
+ 
         await pool.query(
             `INSERT INTO historialEfectivo (base, efectivoDia, total)
                 VALUES (${processedData.base}, ${processedData.efectivoDelDia}, ${processedData.total});`);
 
-        await pool.query('delete from efectivoDia where id = 1');
+        // await pool.query('delete from efectivoDia where id = 1;');
+        await pool.query('delete from historialEfectivo;');
+        await pool.query('delete from efectivoDia;');
 
         return {
             isError: false,

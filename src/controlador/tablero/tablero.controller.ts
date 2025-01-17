@@ -193,6 +193,7 @@ const totalEfectivo = async (req: Request, res: Response) => {
 
 const efectivo = async (req: Request, res: Response) => {
     try { 
+      
         const response: any = await tableroService.efectivo(req.body);
    
         return res.status(200).json(response);
