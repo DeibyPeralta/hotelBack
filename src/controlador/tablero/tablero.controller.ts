@@ -37,7 +37,6 @@ const addTablero = async (req: Request, res: Response) => {
         const fechaActual = new Date();
         const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
 
-        console.log(fechaFormateada);
         const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada);
         
         return res.status(200).json(response.data);
@@ -92,7 +91,7 @@ const addHabitaciones = async (req: Request, res: Response) => {
 
 const historialHabitaciones = async (req: Request, res: Response) => {
     try { 
-        console.log(req.body.socio)
+       
         const validateSocio = await tableroService.validateSocio(req.body.socio)
    
         if (validateSocio.isError || !validateSocio.data) {
@@ -100,7 +99,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
                 isError: true,
                 message: "Socio no encontrado o inválido" });
         }
-    
+
         const response: any = await tableroService.historialHabitaciones(req.body);
 
         return res.status(200).json(response.data);
@@ -114,7 +113,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
 const historial = async (req: Request, res: Response) => {
     try {
         const response: any = await tableroService.historial();
-
+      
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
@@ -151,6 +150,71 @@ const editar_tablero = async (req: Request, res: Response) => {
     }
 }
 
+const cuadre_caja = async (req: Request, res: Response) => {
+    try { 
+
+        const body = req.body;
+        
+        await tableroService.cuadre_caja( body );
+
+        return res.status(200);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const flujoEfectivo = async (req: Request, res: Response) => {
+    try { 
+
+        const response: any = await tableroService.flujoEfectivo();
+   
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const totalEfectivo = async (req: Request, res: Response) => {
+    try { 
+
+        const response: any = await tableroService.totalEfectivo();
+   
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const efectivo = async (req: Request, res: Response) => {
+    try { 
+        const response: any = await tableroService.efectivo(req.body);
+   
+        return res.status(200).json(response);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const updateBase = async (req: Request, res: Response) => {
+    try { 
+        const response: any = await tableroService.updateBase(req.body);
+   
+        return res.status(200).json(response);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -161,5 +225,10 @@ export default {
     historialHabitaciones,
     historial,
     deleteHabitaciones,
-    editar_tablero
+    editar_tablero,
+    cuadre_caja,
+    flujoEfectivo,
+    totalEfectivo,
+    efectivo,
+    updateBase
 }

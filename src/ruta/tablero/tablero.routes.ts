@@ -12,5 +12,10 @@ router.delete('/eliminar-habitaciones/:num_habitacion', tableroController.delete
 router.post('/historial-habitaciones', tableroController.historialHabitaciones);
 router.get('/historial', tableroController.historial);
 router.post('/editar_tablero', tableroController.editar_tablero);
+router.post('/cuadre-caja', tableroController.cuadre_caja);
+router.get('/flujo-efectivo', tableroController.flujoEfectivo);
+router.get('/total-efectivo', tableroController.totalEfectivo);
+router.post('/efectivo', tableroController.efectivo);
+router.post('/update-base', tableroController.updateBase);
 
 export default router;

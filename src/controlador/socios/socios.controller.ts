@@ -42,7 +42,7 @@ const getsocios = async(req: Request, res: Response) => {
 
 const updateSocio = async(req: Request, res: Response) => {
     try {
-        console.log(req.body)
+        
         const response: any = await sociosService.updateSocio(req.body);
 
         return res.status(200).json(response.data);
