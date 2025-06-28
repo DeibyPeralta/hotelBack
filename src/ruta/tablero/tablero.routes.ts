@@ -17,5 +17,7 @@ router.get('/flujo-efectivo', tableroController.flujoEfectivo);
 router.get('/total-efectivo', tableroController.totalEfectivo);
 router.post('/efectivo', tableroController.efectivo);
 router.post('/update-base', tableroController.updateBase);
+router.get('/historial-caja', tableroController.historialcajaBase);
+router.get('/historial-graficos', tableroController.historialGraficos);
 
 export default router;

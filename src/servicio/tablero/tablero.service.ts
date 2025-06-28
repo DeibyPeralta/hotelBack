@@ -5,8 +5,14 @@ const vista = async () => {
     try {
         console.log('***** Añadiendo datos del tablero *****');
     
-        const queryResult = await pool.query(`SELECT h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino
-                        FROM habitaciones h LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion ORDER BY NUM_HABITACION;`);
+        const queryResult = await pool.query(`
+                    SELECT  h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio
+                    FROM habitaciones h 
+                        LEFT JOIN tablero t 
+                            ON h.num_habitacion = t.num_habitacion 
+                        LEFT JOIN socios s
+                            ON t.interno = s.cod_interno
+                    ORDER BY H.num_habitacion ASC `);
  
         return {
             isError: false,
@@ -104,39 +110,6 @@ const addHabitaciones = async ( body: any ) => {
     }
 }
 
-// const historialHabitaciones = async ( body: any ) => {
-//     try {
-
-//         body.efectivo_valor_factura = body.efectivo_valor_factura || false;
-//         body.efectivo_valor_ropa = body.efectivo_valor_ropa || false;
-//         body.efectivo_tienda = body.efectivo_tienda || false;
-//         body.fecha = getCurrentDateTime();
-
-//         await pool.query(`
-//             INSERT INTO historial (
-//                 num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, comentario, cod_socio, 
-//                 fechasalida, fechasistema, destino, hora_salida, valor_tienda, efectivo_valor_hospedaje, efectivo_valor_lavado, efectivo_valor_parqueo, efectivo_valor_factura, 
-//                 efectivo_valor_ropa, efectivo_tienda, efectivo_aseo, ropa
-//             ) VALUES (
-//                 '${body.num_habitacion}', '${body.hora_llegada}', '${body.llamada}', '${body.interno}', '${body.placa}', '${body.aseo}', '${body.valor_hospedaje}', '${body.valor_lavado}',
-//                 '${body.valor_parqueo}', '${body.num_factura}', '${body.valor_factura}', '${body.comentario}', '${body.socio}', '${body.fechaSalida}', '${body.fecha}', '${body.destino}', 
-//                 '${body.hora_salida}', '${body.tienda}', '${body.efectivo_valor_hospedaje}', '${body.efectivo_valor_lavado}', '${body.efectivo_valor_porqueo}', '${body.efectivo_valor_factura}', 
-//                 '${body.efectivo_valor_ropa}', '${body.efectivo_tienda}', '${body.efectivo_aseo}', '${body.ropa}' ); `);
-        
-//         await pool.query(`UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = '${body.num_habitacion}' `);         
-
-//         return {
-//             isError: false,
-//             data: 'Registro exitoso'
-//         };
-//     } catch (error) {
-//         console.log("ERROR al registrar una habitacion.");
-//         console.log(error);
-//         throw error;
-//     }
-// }
-
-
 const historialHabitaciones = async (body: any) => {
     try {
         
@@ -193,11 +166,16 @@ function getCurrentDateTime(): string {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-
 const historial = async ( ) => {
     try {
        
-        const queryResult = await pool.query(`SELECT * FROM historial h LEFT JOIN socios s ON h.cod_Socio = s.cod_socio ORDER by h.fechasistema DESC;`);
+        const queryResult = await pool.query(`
+            SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
+                    h.valor_hospedaje, valor_lavado, h.valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, 
+                    h.fechasalida, h.fechasistema FROM historial h 
+            LEFT JOIN socios s 
+                ON h.cod_Socio = s.cod_socio 
+            ORDER by h.fechasistema DESC;`);
 
         return {
             isError: false,
@@ -243,7 +221,6 @@ const editar_tablero = async ( body: any ) => {
         throw error;
     }
 }
-
 
 const validateSocio = async ( cod_socio: any ) => {
     try { 
@@ -325,7 +302,6 @@ const totalEfectivo = async ( ) => {
     }
 }
 
-
 const efectivo = async (body: any) => {
     try {
 
@@ -341,14 +317,14 @@ const efectivo = async (body: any) => {
             efectivoDelDia: efectivoNumber,
             total: totalNumber
         };
- 
+
         await pool.query(
-            `INSERT INTO historialEfectivo (base, efectivoDia, total)
-                VALUES (${processedData.base}, ${processedData.efectivoDelDia}, ${processedData.total});`);
+            `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario)
+                VALUES ($1, $2, $3, $4)`, [processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario]);
 
         // await pool.query('delete from efectivoDia where id = 1;');
-        await pool.query('delete from historialEfectivo;');
-        await pool.query('delete from efectivoDia;');
+        // await pool.query('delete from historialEfectivo;');
+        await pool.query('delete from efectivoDia where id <> 1;');
 
         return {
             isError: false,
@@ -361,10 +337,9 @@ const efectivo = async (body: any) => {
     }
 }
 
-
 const updateBase = async (body: any) => {
     try {
-     
+        
         await pool.query(`update efectivoDia set efectivo =  ${body.inputValue} where id = 1`);
 
         return {
@@ -372,13 +347,75 @@ const updateBase = async (body: any) => {
             data: 'Data insertada'
         };
     } catch (error) {
-        console.log("ERROR al cargar el flujo de caja de la base de datos.");
-        console.log(error);
         throw error;        
     }
 }
 
+const historialcajaBase = async () => {
+    try {
+        
+        const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario
+             FROM historialEfectivo;`);
 
+        return {
+            isError: false,
+            data: queryResult.rows
+        };
+    } catch (error) {
+        throw error;        
+    }
+}
+
+const historialGraficos = async (filtros: { socio?: string, destino?: string, fechasistema?: string } = {}) => {
+    try {
+        let baseQuery = `
+            SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
+                    h.valor_hospedaje, valor_lavado, h.valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, 
+                    h.fechasalida, h.fechasistema FROM historial h 
+            LEFT JOIN socios s 
+                ON h.cod_Socio = s.cod_socio 
+        `;
+        const conditions = [];
+        const values = [];
+
+        if (filtros.socio) {
+            conditions.push('s.nombre ILIKE $' + (values.length + 1));
+            values.push(`%${filtros.socio}%`);
+        }
+        if (filtros.destino) {
+            conditions.push('h.destino ILIKE $' + (values.length + 1));
+            values.push(`%${filtros.destino}%`);
+        }
+        if (filtros.fechasistema) {
+            // Permitir rango: fechasistema=YYYY-MM-DD,YYYY-MM-DD
+            const [from, to] = filtros.fechasistema.split(',');
+            if (from) {
+                conditions.push('h.fechasistema >= $' + (values.length + 1));
+                values.push(from);
+            }
+            if (to) {
+                conditions.push('h.fechasistema <= $' + (values.length + 1));
+                values.push(to);
+            }
+        }
+
+        if (conditions.length > 0) {
+            baseQuery += ' WHERE ' + conditions.join(' AND ');
+        }
+        baseQuery += ' ORDER BY h.fechasistema DESC';
+
+        const queryResult = await pool.query(baseQuery, values);
+
+        return {
+            isError: false,
+            data: queryResult.rows
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
 
 export default {
     vista,
@@ -396,6 +433,8 @@ export default {
     flujoEfectivo,
     totalEfectivo,
     efectivo,
-    updateBase
+    updateBase,
+    historialcajaBase,
+    historialGraficos
 }
 

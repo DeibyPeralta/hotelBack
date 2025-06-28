@@ -7,8 +7,6 @@ const vista = async (req: Request, res: Response) => {
 
         return res.status(200).json(response.data);
     } catch (error) {
-        console.log("ERROR ");
-        console.log(error);
         throw error;
     }
 }
@@ -126,7 +124,7 @@ const deleteHabitaciones = async (req: Request, res: Response) => {
     try { 
         const numHabitacion = req.params.num_habitacion;
         const response: any = await tableroService.deleteHabitaciones( numHabitacion );
-
+        
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
@@ -156,7 +154,7 @@ const cuadre_caja = async (req: Request, res: Response) => {
         const body = req.body;
         
         await tableroService.cuadre_caja( body );
-
+        
         return res.status(200);
     } catch (error) {
         console.log("ERROR ");
@@ -167,7 +165,7 @@ const cuadre_caja = async (req: Request, res: Response) => {
 
 const flujoEfectivo = async (req: Request, res: Response) => {
     try { 
-
+        
         const response: any = await tableroService.flujoEfectivo();
    
         return res.status(200).json(response.data);
@@ -180,7 +178,7 @@ const flujoEfectivo = async (req: Request, res: Response) => {
 
 const totalEfectivo = async (req: Request, res: Response) => {
     try { 
-
+        
         const response: any = await tableroService.totalEfectivo();
    
         return res.status(200).json(response.data);
@@ -193,13 +191,11 @@ const totalEfectivo = async (req: Request, res: Response) => {
 
 const efectivo = async (req: Request, res: Response) => {
     try { 
-      
+        
         const response: any = await tableroService.efectivo(req.body);
-   
+        
         return res.status(200).json(response);
     } catch (error) {
-        console.log("ERROR ");
-        console.log(error);
         throw error;
     }
 }
@@ -209,6 +205,31 @@ const updateBase = async (req: Request, res: Response) => {
         const response: any = await tableroService.updateBase(req.body);
    
         return res.status(200).json(response);
+    } catch (error) {
+        throw error;
+    }
+}
+
+const historialcajaBase = async (req: Request, res: Response) => {
+    try { 
+        const response: any = await tableroService.historialcajaBase();
+
+        return res.status(200).json(response.data);
+    } catch (error) {
+        throw error;
+    }
+}
+
+const historialGraficos = async (req: Request, res: Response) => {
+    try {
+        const { socio, destino, fechasistema } = req.query;
+        const filtros: any = {};
+        if (socio) filtros.socio = socio;
+        if (destino) filtros.destino = destino;
+        if (fechasistema) filtros.fechasistema = fechasistema;
+        const response: any = await tableroService.historialGraficos(filtros);
+      
+        return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
         console.log(error);
@@ -231,5 +252,7 @@ export default {
     flujoEfectivo,
     totalEfectivo,
     efectivo,
-    updateBase
+    updateBase,
+    historialcajaBase,
+    historialGraficos
 }
