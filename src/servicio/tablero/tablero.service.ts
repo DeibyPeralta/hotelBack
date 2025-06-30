@@ -355,7 +355,7 @@ const historialcajaBase = async () => {
     try {
         
         const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario
-             FROM historialEfectivo;`);
+             FROM historialEfectivo ORDER BY fecha DESC`);
 
         return {
             isError: false,
