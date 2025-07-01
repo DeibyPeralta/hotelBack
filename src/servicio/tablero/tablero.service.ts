@@ -6,7 +6,7 @@ const vista = async () => {
         console.log('***** Añadiendo datos del tablero *****');
     
         const queryResult = await pool.query(`
-                    SELECT  h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio
+                    SELECT  h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio, s.placa
                     FROM habitaciones h 
                         LEFT JOIN tablero t 
                             ON h.num_habitacion = t.num_habitacion 
@@ -304,38 +304,45 @@ const totalEfectivo = async ( ) => {
 
 const efectivo = async (body: any) => {
     try {
-
-        const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, ''); 
-        const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.')); 
-        const baseString = body.base.replace('$', '').replace(/\s/g, ''); 
-        const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.')); 
-        const totalString = body.total.replace('$', '').replace(/\s/g, ''); 
-        const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.')); 
+      const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, '');
+      const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.'));
+      const baseString = body.base.replace('$', '').replace(/\s/g, '');
+      const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.'));
+      const totalString = body.total.replace('$', '').replace(/\s/g, '');
+      const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.'));
+      const pagosRealizadosString = body.pagosRealizados.replace('$', '').replace(/\s/g, '');
+      const pagosRealizadosNumber = parseFloat(pagosRealizadosString.replace('.', '').replace(',', '.'));
   
-        const processedData = {
-            base: baseNumber,
-            efectivoDelDia: efectivoNumber,
-            total: totalNumber
-        };
-
+      const processedData = {
+        base: baseNumber,
+        efectivoDelDia: efectivoNumber,
+        pagosRealizados: pagosRealizadosNumber,
+        total: totalNumber
+      };
+  
+      const { rowCount } = await pool.query( `SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
+  
+      if (rowCount === 0) {
         await pool.query(
-            `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario)
-                VALUES ($1, $2, $3, $4)`, [processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario]);
-
-        // await pool.query('delete from efectivoDia where id = 1;');
-        // await pool.query('delete from historialEfectivo;');
-        await pool.query('delete from efectivoDia where id <> 1;');
-
-        return {
-            isError: false,
-            data: 'Data insertada'
-        };
+          `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario, turno, pagosdeldia, fechaturno)
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)`,
+          [ processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario, body.turno, processedData.pagosRealizados ]
+        );
+      }
+  
+      await pool.query('DELETE FROM efectivoDia WHERE id <> 1;');
+  
+      return {
+        isError: false,
+        data: rowCount === 0 ? 'Data insertada' : 'Ya existía un registro para este turno'
+      };
     } catch (error) {
-        console.log("ERROR al cargar el flujo de caja de la base de datos.");
-        console.log(error);
-        throw error;        
+      console.error('ERROR al insertar el flujo de caja en la base de datos.');
+      console.error(error);
+      throw error;
     }
-}
+  };
+  
 
 const updateBase = async (body: any) => {
     try {
@@ -354,7 +361,7 @@ const updateBase = async (body: any) => {
 const historialcajaBase = async () => {
     try {
         
-        const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario
+        const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario, pagosdeldia as pagos, turno
              FROM historialEfectivo ORDER BY fecha DESC`);
 
         return {
@@ -366,28 +373,23 @@ const historialcajaBase = async () => {
     }
 }
 
-const historialGraficos = async (filtros: { socio?: string, destino?: string, fechasistema?: string } = {}) => {
+const historialGraficos = async (filtros: { socio?: string, fechasistema?: string } = {}) => {
     try {
+        
         let baseQuery = `
             SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
                     h.valor_hospedaje, valor_lavado, h.valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, 
                     h.fechasalida, h.fechasistema FROM historial h 
             LEFT JOIN socios s 
-                ON h.cod_Socio = s.cod_socio 
-        `;
+                ON h.cod_Socio = s.cod_socio   `;
         const conditions = [];
         const values = [];
 
         if (filtros.socio) {
             conditions.push('s.nombre ILIKE $' + (values.length + 1));
             values.push(`%${filtros.socio}%`);
-        }
-        if (filtros.destino) {
-            conditions.push('h.destino ILIKE $' + (values.length + 1));
-            values.push(`%${filtros.destino}%`);
-        }
+        }   
         if (filtros.fechasistema) {
-            // Permitir rango: fechasistema=YYYY-MM-DD,YYYY-MM-DD
             const [from, to] = filtros.fechasistema.split(',');
             if (from) {
                 conditions.push('h.fechasistema >= $' + (values.length + 1));
@@ -437,4 +439,3 @@ export default {
     historialcajaBase,
     historialGraficos
 }
-
