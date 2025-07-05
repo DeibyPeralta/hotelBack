@@ -3,10 +3,9 @@ const pool = dbConfig.pool;
 
 const vista = async () => {
     try {
-        console.log('***** Añadiendo datos del tablero *****');
-    
+
         const queryResult = await pool.query(`
-                    SELECT  h.num_habitacion, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio, s.placa
+                    SELECT  h.num_habitacion, h.estado, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio, s.placa
                     FROM habitaciones h 
                         LEFT JOIN tablero t 
                             ON h.num_habitacion = t.num_habitacion 
@@ -41,25 +40,39 @@ const maxhabitaciones = async () => {
     }
 }
 
-const addTablero = async (interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any) => {
-    try { 
-
-        const queryResult = await pool.query(`INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada)
-                    VALUES ( '${interno}', ${num_habitacion}, '${hora_llegada}', '${aseo}', '${llamada}', '${destino}', '${fecha_llegada}'); `)
-
-        await pool.query(`UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = '${num_habitacion}' `);
+const addTablero = async ( interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any ) => {
+    try {   
+        
+        // Verificar si la habitación está disponible
+        const habitacionResult = await pool.query( `SELECT estado FROM habitaciones WHERE num_habitacion = $1`, [num_habitacion] );
+        
+        const estado = habitacionResult.rows[0].estado;
+    
+        if (estado.toLowerCase() !== 'disponible') {
+            return {
+                isError: true,
+                message: `La habitación ${num_habitacion} no está disponible, esta ${estado}`,
+            };
+        }
+    
+        // Insertar en tablero
+        const queryResult = await pool.query(
+            `INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`, [interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada] );
+    
+        // Actualizar estado de la habitación
+        await pool.query( `UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = $1`, [num_habitacion] );
     
         return {
             isError: false,
-            data: queryResult.rows
+            message: 'Habitación registrada correctamente',
+            data: queryResult.rows[0],
         };
     } catch (error) {
-        console.log("ERROR al registrar en el tablero.");
-        console.log(error);
-        throw error;
+      throw error;
     }
-}
-
+};
+  
 const habitaciones = async () => {
     try {
         const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones order by num_habitacion;`);
@@ -112,35 +125,49 @@ const addHabitaciones = async ( body: any ) => {
 
 const historialHabitaciones = async (body: any) => {
     try {
-        
+ 
         body.efectivo_valor_factura = body.efectivo_valor_factura || false;
         body.efectivo_valor_ropa = body.efectivo_valor_ropa || false;
         body.efectivo_tienda = body.efectivo_tienda || false;
         body.efectivo_aseo = body.efectivo_aseo || false;
-        body.efectivo_aseo = body.efectivo_aseo || false;
         body.efectivo_valor_hospedaje = body.efectivo_valor_hospedaje || false;
         body.efectivo_valor_lavado = body.efectivo_valor_lavado || false;
-        body.efectivo_valor_porqueo = body.efectivo_valor_porqueo || false;
+        body.efectivo_valor_parqueo = body.efectivo_valor_porqueo || false;
 
-        body.fechasistema = getCurrentDateTime(); 
-
+        body.fechasistema = getCurrentDateTime();
+   
         const query = `
             INSERT INTO historial (
-                num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, comentario, cod_socio, 
-                fechasalida, fechasistema, destino, hora_salida, valor_tienda, efectivo_valor_hospedaje, efectivo_valor_lavado, efectivo_valor_parqueo, efectivo_valor_factura, 
-                efectivo_valor_ropa, efectivo_tienda, efectivo_aseo, ropa
-            ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26 ) `;
+                num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, 
+                comentario, cod_socio, fechasalida, fechasistema, destino, hora_salida, valor_tienda, efectivo_valor_hospedaje, efectivo_valor_lavado, 
+                efectivo_valor_parqueo, efectivo_valor_factura, efectivo_valor_ropa, efectivo_tienda, efectivo_aseo, ropa, registered_by ) 
+            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 
+                    $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27 ); `; 
 
         const values = [
-            body.num_habitacion, body.hora_llegada, body.llamada, body.interno, body.placa, body.aseo, body.valor_hospedaje, body.valor_lavado,
-            body.valor_parqueo, body.num_factura, body.valor_factura, body.comentario, body.socio, body.fechaSalida, body.fechasistema, body.destino,
-            body.hora_salida, body.tienda, body.efectivo_valor_hospedaje, body.efectivo_valor_lavado, body.efectivo_valor_parqueo, body.efectivo_valor_factura,
-            body.efectivo_valor_ropa, body.efectivo_tienda, body.efectivo_aseo, body.ropa
+            body.num_habitacion, body.hora_llegada, body.llamada, body.interno, body.placa, body.aseo,
+            body.valor_hospedaje, body.valor_lavado, body.valor_parqueo, body.num_factura, body.valor_factura,
+            body.comentario, body.socio, body.fechaSalida, body.fechasistema, body.destino, body.hora_salida,
+            body.tienda, body.efectivo_valor_hospedaje, body.efectivo_valor_lavado, body.efectivo_valor_parqueo,
+            body.efectivo_valor_factura, body.efectivo_valor_ropa, body.efectivo_tienda, body.efectivo_aseo,
+            body.ropa, body.usuario
         ];
 
         await pool.query(query, values);
 
-        await pool.query(`UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion]);
+        await pool.query(
+            `UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`,
+            [body.num_habitacion]
+        );
+
+        console.log('QUERY PARA DEBUG:');
+        console.log(
+        query.replace(/\$\d+/g, (match) => {
+            const index = parseInt(match.substring(1)) - 1;
+            const val = values[index];
+            return typeof val === 'string' ? `'${val}'` : val;
+        })
+        );
 
         return {
             isError: false,
@@ -152,6 +179,7 @@ const historialHabitaciones = async (body: any) => {
         throw error;
     }
 };
+
 
 function getCurrentDateTime(): string {
     const now = new Date();
@@ -172,7 +200,7 @@ const historial = async ( ) => {
         const queryResult = await pool.query(`
             SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
                     h.valor_hospedaje, valor_lavado, h.valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, 
-                    h.fechasalida, h.fechasistema FROM historial h 
+                    h.fechasalida, h.fechasistema, h.registered_by FROM historial h 
             LEFT JOIN socios s 
                 ON h.cod_Socio = s.cod_socio 
             ORDER by h.fechasistema DESC;`);
@@ -341,9 +369,8 @@ const efectivo = async (body: any) => {
       console.error(error);
       throw error;
     }
-  };
+};
   
-
 const updateBase = async (body: any) => {
     try {
         
@@ -419,6 +446,22 @@ const historialGraficos = async (filtros: { socio?: string, fechasistema?: strin
     }
 }
 
+const habitacionesDisponibles = async () => {
+    try {
+        
+        const queryResult = await pool.query(`SELECT num_habitacion FROM habitaciones WHERE estado = 'Disponible' `);
+      
+        return {
+            isError: false,
+            data: queryResult.rows
+        };;
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -437,5 +480,6 @@ export default {
     efectivo,
     updateBase,
     historialcajaBase,
-    historialGraficos
+    historialGraficos,
+    habitacionesDisponibles
 }

@@ -9,22 +9,20 @@ const hashPassword = async (password: string) => {
     return hashedPassword;
 };
 
-const registerUser = async (correo: string, password: string, nombre: string, cedula: string, telefono: string, rol: string) => { 
+const registerUser = async (correo: string, password: string, nombre: string, cedula: string, telefono: string) => { 
     try { 
         console.log('***** Registrando usuario en la base de datos *****');
-
-        const validate = await pool.query(`select cedula from usuarios where cedula = '${cedula}'`);
+         
+        const validate = await pool.query(`SELECT cedula FROM usuarios WHERE cedula = $1`,[cedula] );
         const validateCedula = validate.rows.length > 0 ? validate.rows[0].cedula : 0;
-        // console.log(validateCedula);
-        // console.log('deiby');
-        // console.log(cedula);
+           
         if(cedula != validateCedula ){
-            // Encripta la contraseña antes de insertarla en la base de datos
+      
             const encryptedPassword = await hashPassword(password);
 
-            const queryResult = await pool.query(`INSERT INTO usuarios (correo, password, nombre, cedula, telefono, rol)
-                    VALUES ('${correo}', '${encryptedPassword}', '${nombre}', '${cedula}', '${telefono}', '${rol}');`);
-        
+            await pool.query( `INSERT INTO usuarios (correo, password, nombre, cedula, telefono, rol)
+                    VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (cedula) DO NOTHING;`, [correo, encryptedPassword, nombre, cedula, telefono, 2] );
+                
             return {
                 isError: false,
                 message: 'Usuario registrado'
@@ -48,7 +46,7 @@ const login = async (correo: string, password: string) => {
         console.log('***** Iniciando sesión *****');
         
         // Buscar el usuario por correo
-        const queryResult = await pool.query(`SELECT * FROM usuarios where correo = '${correo}' ;`);
+        const queryResult = await pool.query(`SELECT id, correo, password, nombre, cedula, telefono, rol FROM usuarios where correo = '${correo}' ;`);
         
         if (queryResult.rows.length === 0) {
             return { 
@@ -59,10 +57,8 @@ const login = async (correo: string, password: string) => {
 
         const user = queryResult.rows[0];
 
-        // Comparar la contraseña ingresada con la almacenada en la base de datos
         const passwordMatch = await bcrypt.compare(password, user.password);
-        // console.log(passwordMatch);
-        // console.log('deiby');
+
         if (!passwordMatch) {
             return {
                 isError: true,
@@ -70,8 +66,14 @@ const login = async (correo: string, password: string) => {
             };
         }
 
-        const token = generarToken(user);
-        // console.log(token);
+        const tokenPayload = {
+            id: user.id,
+            nombre: user.nombre,
+            rol: user.rol 
+        };
+        
+        const token = generarToken(tokenPayload);
+        
         return {
             isError: false,
             message: token
@@ -83,9 +85,54 @@ const login = async (correo: string, password: string) => {
     }
 };
 
+const permisos = async () => {
+    try {
+        const queryResult = await pool.query(`select id, correo, nombre, telefono, rol from usuarios`);
+
+        return queryResult.rows
+    } catch (error) {
+        throw error;
+    }  
+}
+
+const editPermisos = async (correo: string, nombre: string, telefono: string, rol: string, id: string) => {
+    try {
+      const query = ` UPDATE usuarios
+            SET correo = $1, nombre = $2, telefono = $3, rol = $4
+            WHERE id = $5 RETURNING id, correo, nombre, telefono, rol `;
+  
+      const values = [correo, nombre, telefono, rol, id];
+  
+      const queryResult = await pool.query(query, values);
+  
+      return queryResult.rows[0]; 
+    } catch (error) {
+      console.error("ERROR al editar permisos del usuario:", error);
+      throw error;
+    }
+};
+
+const deleteUsers = async (id: string) => {
+    try {
+      const query = `DELETE FROM usuarios WHERE id = $1`;
+  
+      const values = [id];
+  
+      const queryResult = await pool.query(query, values);
+     
+      return queryResult.rows[0]; 
+    } catch (error) {
+      console.error("ERROR al editar permisos del usuario:", error);
+      throw error;
+    }
+};
+  
 
 
 export default {
     login,
     registerUser,
+    permisos,
+    editPermisos,
+    deleteUsers
 }

@@ -36,8 +36,8 @@ const addTablero = async (req: Request, res: Response) => {
         const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
 
         const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada);
-        
-        return res.status(200).json(response.data);
+ 
+        return res.status(200).json(response);
     } catch (error) {
         console.log("ERROR ");
         console.log(error);
@@ -88,14 +88,18 @@ const addHabitaciones = async (req: Request, res: Response) => {
 }
 
 const historialHabitaciones = async (req: Request, res: Response) => {
-    try { 
-       
-        const validateSocio = await tableroService.validateSocio(req.body.socio)
-   
+    try {
+        const { socio, usuario } = req.body; 
+
+        console.log('Usuario que hizo el registro:', usuario);
+
+        const validateSocio = await tableroService.validateSocio(socio);
+
         if (validateSocio.isError || !validateSocio.data) {
             return res.status(404).json({  
                 isError: true,
-                message: "Socio no encontrado o inválido" });
+                message: "Socio no encontrado o inválido"
+            });
         }
 
         const response: any = await tableroService.historialHabitaciones(req.body);
@@ -104,7 +108,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
     } catch (error) {
         console.log("ERROR ");
         console.log(error);
-        throw error;
+        return res.status(500).json({ message: 'Error interno del servidor' });
     }
 }
 
@@ -237,6 +241,17 @@ const historialGraficos = async (req: Request, res: Response) => {
     }
 }
 
+const habitacionesDisponibles = async (req: Request, res: Response) => {
+    try { 
+        
+        const response: any = await tableroService.habitacionesDisponibles();
+        
+        return res.status(200).json(response);
+    } catch (error) {
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -254,5 +269,6 @@ export default {
     efectivo,
     updateBase,
     historialcajaBase,
-    historialGraficos
+    historialGraficos,
+    habitacionesDisponibles
 }
