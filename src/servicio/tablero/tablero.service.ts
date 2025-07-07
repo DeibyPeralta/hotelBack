@@ -198,9 +198,10 @@ const historial = async ( ) => {
     try {
        
         const queryResult = await pool.query(`
-            SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
-                    h.valor_hospedaje, valor_lavado, h.valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, 
-                    h.fechasalida, h.fechasistema, h.registered_by FROM historial h 
+            SELECT interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
+					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, 
+                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema 
+            FROM historial h 
             LEFT JOIN socios s 
                 ON h.cod_Socio = s.cod_socio 
             ORDER by h.fechasistema DESC;`);
@@ -254,7 +255,8 @@ const validateSocio = async ( cod_socio: any ) => {
     try { 
     
         const queryResult = await pool.query(
-            'SELECT nombre FROM socios WHERE cod_socio = $1',
+            `SELECT nombre FROM socios 
+                WHERE cod_socio = $1 OR LOWER(nombre) ILIKE '%' || LOWER($1) || '%'`,
             [cod_socio] );
    
            return {
@@ -295,10 +297,19 @@ const flujoEfectivo = async ( ) => {
     try {
         
         const queryResult = await pool.query(
-            `SELECT 
-                SUM(CASE WHEN id <> 1 THEN CAST(efectivo AS numeric) ELSE 0 END) AS total_efectivo,
-                SUM(CASE WHEN id = 1 THEN CAST(efectivo AS numeric) ELSE 0 END) AS base
-            FROM efectivoDia; `);
+            `        
+                SELECT 
+                    SUM(CASE 
+                            WHEN id <> 1 AND efectivo ~ '^[0-9]+$' 
+                            THEN CAST(efectivo AS numeric) 
+                            ELSE 0 
+                        END) AS total_efectivo,
+                    SUM(CASE 
+                            WHEN id = 1 AND efectivo ~ '^[0-9]+$' 
+                            THEN CAST(efectivo AS numeric) 
+                            ELSE 0 
+                        END) AS base
+                FROM efectivoDia;`);
      
            return {
                isError: false,
