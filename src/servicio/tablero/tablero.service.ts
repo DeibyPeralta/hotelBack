@@ -200,7 +200,7 @@ const historial = async ( ) => {
         const queryResult = await pool.query(`
             SELECT interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
 					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, 
-                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema 
+                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema, h.registered_by
             FROM historial h 
             LEFT JOIN socios s 
                 ON h.cod_Socio = s.cod_socio 
