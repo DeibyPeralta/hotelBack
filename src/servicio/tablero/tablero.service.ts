@@ -198,13 +198,47 @@ const historial = async ( ) => {
     try {
        
         const queryResult = await pool.query(`
-            SELECT interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
-					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, 
-                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema, h.registered_by
+            SELECT h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
+					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, h.notaJustificante,
+                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema, h.efectivo_valor_ropa, h.ropa, h.registered_by
             FROM historial h 
             LEFT JOIN socios s 
                 ON h.cod_Socio = s.cod_socio 
             ORDER by h.fechasistema DESC;`);
+
+        return {
+            isError: false,
+            data: queryResult.rows
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
+const updateHistorial = async ( body: any ) => {
+    try {
+        
+        const queryResult = await pool.query(`
+            UPDATE historial SET
+              num_habitacion = $1,
+              interno = $2, hora_llegada = $3, valor_factura = $4, comentario = $5, hora_salida = $6, fechasalida = $7,
+              efectivo_valor_hospedaje = $8,
+              efectivo_valor_lavado = $9,
+              efectivo_valor_parqueo = $10,
+              efectivo_valor_ropa = $11,
+              valor_hospedaje = $12,
+              valor_lavado = $13,
+              valor_parqueo = $14,
+              valor_tienda = $15,
+              ropa = $16,
+              notaJustificante = $17
+            WHERE id = $18 `, [ 
+                body.num_habitacion, body.interno, body.hora_llegada, body.valor_factura, body.comentario, body.hora_salida, 
+                body.fecha, body.efectivo_valor_hospedaje, body.efectivo_valor_lavado, body.efectivo_valor_parqueo, 
+                body.efectivo_valor_ropa, body.valor_hospedaje, body.valor_lavado, body.valor_parqueo, body.valor_tienda, body.ropa, body.justificacion, body.id
+             ]);
 
         return {
             isError: false,
@@ -473,6 +507,40 @@ const habitacionesDisponibles = async () => {
     }
 }
 
+const insertGastosDiarios = async (body: any) => {
+    try {
+               
+        const queryResult = await pool.query(`
+            INSERT INTO gastosdiarios(efectivodia, descripcion, usuario, historial, fecha) 
+                VALUES($1, $2, $3, false, now()) RETURNING *`, [body.valor, body.descripcion, body.usuario]);
+      
+        return {
+            isError: false,
+            data: queryResult
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
+const getGastosDiarios = async () => {
+    try {
+              
+        const queryResult = await pool.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios `);
+      
+        return {
+            isError: false,
+            data: queryResult
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -482,6 +550,7 @@ export default {
     addHabitaciones,
     historialHabitaciones,
     historial,
+    updateHistorial,
     deleteHabitaciones,
     editar_tablero,
     validateSocio,
@@ -492,5 +561,7 @@ export default {
     updateBase,
     historialcajaBase,
     historialGraficos,
-    habitacionesDisponibles
+    habitacionesDisponibles,
+    insertGastosDiarios,
+    getGastosDiarios
 }

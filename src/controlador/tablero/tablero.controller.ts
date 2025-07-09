@@ -124,6 +124,19 @@ const historial = async (req: Request, res: Response) => {
     }
 }
 
+const updateHistorial = async (req: Request, res: Response) => {
+    try {
+            
+        await tableroService.updateHistorial(req.body);
+      
+        res.status(200).json({ message: 'Historial actualizado correctamente' });
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+  
 const deleteHabitaciones = async (req: Request, res: Response) => {
     try { 
         const numHabitacion = req.params.num_habitacion;
@@ -252,6 +265,28 @@ const habitacionesDisponibles = async (req: Request, res: Response) => {
     }
 }
 
+const insertGastosDiarios = async (req: Request, res: Response) => {
+    try { 
+        
+        const response: any = await tableroService.insertGastosDiarios(req.body);
+       
+        return res.status(200).json('Gastos insertados correctamente');
+    } catch (error) {
+        throw error;
+    }
+}
+
+const getGastosDiarios = async (req: Request, res: Response) => {
+    try { 
+        
+        const response: any = await tableroService.getGastosDiarios();
+        
+        return res.status(200).json(response);
+    } catch (error) {
+        throw error;
+    }
+}
+
 export default {
     vista,
     maxhabitaciones,
@@ -261,6 +296,7 @@ export default {
     addHabitaciones,
     historialHabitaciones,
     historial,
+    updateHistorial,
     deleteHabitaciones,
     editar_tablero,
     cuadre_caja,
@@ -270,5 +306,7 @@ export default {
     updateBase,
     historialcajaBase,
     historialGraficos,
-    habitacionesDisponibles
+    habitacionesDisponibles,
+    insertGastosDiarios,
+    getGastosDiarios
 }

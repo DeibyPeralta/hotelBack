@@ -12,6 +12,7 @@ router.post('/add-habitaciones', tableroController.addHabitaciones);
 router.delete('/eliminar-habitaciones/:num_habitacion', tableroController.deleteHabitaciones);
 router.post('/historial-habitaciones', tableroController.historialHabitaciones);
 router.get('/historial', tableroController.historial);
+router.put('/update-historial', tableroController.updateHistorial);
 router.post('/editar_tablero', tableroController.editar_tablero);
 router.post('/cuadre-caja', tableroController.cuadre_caja);
 router.get('/flujo-efectivo', tableroController.flujoEfectivo);
@@ -20,5 +21,7 @@ router.post('/efectivo', tableroController.efectivo);
 router.post('/update-base', tableroController.updateBase);
 router.get('/historial-caja', tableroController.historialcajaBase);
 router.get('/historial-graficos', tableroController.historialGraficos);
+router.post('/insert-gastos-diarios', tableroController.insertGastosDiarios);
+router.post('/get-all-gastos-diarios', tableroController.getGastosDiarios);
 
 export default router;
