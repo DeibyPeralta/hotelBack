@@ -22,6 +22,7 @@ router.post('/update-base', tableroController.updateBase);
 router.get('/historial-caja', tableroController.historialcajaBase);
 router.get('/historial-graficos', tableroController.historialGraficos);
 router.post('/insert-gastos-diarios', tableroController.insertGastosDiarios);
-router.post('/get-all-gastos-diarios', tableroController.getGastosDiarios);
+router.get('/get-all-gastos-diarios', tableroController.getGastosDiarios);
+router.get('/total-gastos-diarios', tableroController.totalGastosDiarios);
 
 export default router;

@@ -280,7 +280,18 @@ const getGastosDiarios = async (req: Request, res: Response) => {
     try { 
         
         const response: any = await tableroService.getGastosDiarios();
+            
+        return res.status(200).json(response);
+    } catch (error) {
+        throw error;
+    }
+}
+
+const totalGastosDiarios = async (req: Request, res: Response) => {
+    try { 
         
+        const response: any = await tableroService.totalGastosDiarios();
+       
         return res.status(200).json(response);
     } catch (error) {
         throw error;
@@ -288,17 +299,17 @@ const getGastosDiarios = async (req: Request, res: Response) => {
 }
 
 export default {
-    vista,
-    maxhabitaciones,
-    addTablero,
-    habitaciones,
-    editarHabitaciones,
-    addHabitaciones,
-    historialHabitaciones,
-    historial,
-    updateHistorial,
-    deleteHabitaciones,
-    editar_tablero,
+    vista, 
+    maxhabitaciones, 
+    addTablero, 
+    habitaciones, 
+    editarHabitaciones, 
+    addHabitaciones, 
+    historialHabitaciones, 
+    historial, 
+    updateHistorial, 
+    deleteHabitaciones, 
+    editar_tablero, 
     cuadre_caja,
     flujoEfectivo,
     totalEfectivo,
@@ -308,5 +319,6 @@ export default {
     historialGraficos,
     habitacionesDisponibles,
     insertGastosDiarios,
-    getGastosDiarios
+    getGastosDiarios,
+    totalGastosDiarios
 }

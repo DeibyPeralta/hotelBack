@@ -405,6 +405,8 @@ const efectivo = async (body: any) => {
   
       await pool.query('DELETE FROM efectivoDia WHERE id <> 1;');
   
+      await pool.query(`UPDATE gastosdiarios SET historial = true WHERE historial = false;`)
+
       return {
         isError: false,
         data: rowCount === 0 ? 'Data insertada' : 'Ya existía un registro para este turno'
@@ -528,11 +530,27 @@ const insertGastosDiarios = async (body: any) => {
 const getGastosDiarios = async () => {
     try {
               
-        const queryResult = await pool.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios `);
-      
+        const queryResult = await pool.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios ORDER BY fecha DESC;`);
+       
         return {
             isError: false,
-            data: queryResult
+            data: queryResult.rows
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }
+}
+
+const totalGastosDiarios = async () => {
+    try {
+              
+        const queryResult = await pool.query(`SELECT SUM(efectivodia) AS total_actual FROM gastosdiarios WHERE historial = false;`);
+        
+        return {
+            isError: false,
+            data: queryResult.rows[0].total_actual
         };
     } catch (error) {
         console.log("ERROR al registrar usuario en la base de datos.");
@@ -543,6 +561,7 @@ const getGastosDiarios = async () => {
 
 export default {
     vista,
+    totalGastosDiarios,
     maxhabitaciones,
     addTablero,
     habitaciones,
