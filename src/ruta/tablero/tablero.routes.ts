@@ -24,5 +24,6 @@ router.get('/historial-graficos', tableroController.historialGraficos);
 router.post('/insert-gastos-diarios', tableroController.insertGastosDiarios);
 router.get('/get-all-gastos-diarios', tableroController.getGastosDiarios);
 router.get('/total-gastos-diarios', tableroController.totalGastosDiarios);
+router.get('/interno-placa/:interno', tableroController.internoPlaca);
 
 export default router;

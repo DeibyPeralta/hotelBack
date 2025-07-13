@@ -1,32 +1,39 @@
 import dbConfig  from "../../config/dbConfig";
 const pool = dbConfig.pool;
 
-const vista = async () => {
-    try {
+const vista = async (schema: string) => {
+    const client = await pool.connect();
 
-        const queryResult = await pool.query(`
-                    SELECT  h.num_habitacion, h.estado, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio, s.placa
-                    FROM habitaciones h 
-                        LEFT JOIN tablero t 
-                            ON h.num_habitacion = t.num_habitacion 
-                        LEFT JOIN socios s
-                            ON t.interno = s.cod_interno
-                    ORDER BY H.num_habitacion ASC `);
- 
+    try {
+       
+        await client.query(`SET search_path TO ${schema}`);       
+
+        const queryResult = await client.query(`
+            SELECT h.num_habitacion, h.estado, t.interno, t.hora_llegada, 
+                   t.aseo, t.llamada, t.destino, s.placa, s.nombre, 
+                   s.cod_socio, s.placa
+            FROM habitaciones h 
+            LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion 
+            LEFT JOIN socios s ON t.interno = s.cod_interno
+            ORDER BY h.num_habitacion ASC `);
+
         return {
             isError: false,
             data: queryResult.rows
         };
     } catch (error) {
-        console.log("ERROR al registrar usuario en la base de datos.");
-        console.log(error);
+        console.error("ERROR al obtener datos del tablero:", error);
         throw error;
+    } finally {
+        client.release(); 
     }
-}
+};
 
 const maxhabitaciones = async () => {
+    const client = await pool.connect();
     try {
         
+        // await client.query(`SET search_path TO ${schema}`);   
         const queryResult = await pool.query(`SELECT MAX(num_habitacion) AS max_num_habitacion FROM habitaciones;`);
 
         return {
@@ -37,12 +44,14 @@ const maxhabitaciones = async () => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const addTablero = async ( interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any ) => {
-    try {   
-        
+    const client = await pool.connect();
+    try {           
         // Verificar si la habitación está disponible
         const habitacionResult = await pool.query( `SELECT estado FROM habitaciones WHERE num_habitacion = $1`, [num_habitacion] );
         
@@ -70,10 +79,13 @@ const addTablero = async ( interno: string, num_habitacion: string, hora_llegada
         };
     } catch (error) {
       throw error;
+    }finally {
+        client.release();
     }
 };
   
 const habitaciones = async () => {
+    const client = await pool.connect();
     try {
         const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones order by num_habitacion;`);
 
@@ -85,10 +97,13 @@ const habitaciones = async () => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const editar_Habitaciones = async ( body: any ) => {
+    const client = await pool.connect();
     try { 
      
         const queryResult = await pool.query(`UPDATE habitaciones SET estado = '${body.estado}', comentario = '${body.comentario}'
@@ -102,10 +117,13 @@ const editar_Habitaciones = async ( body: any ) => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const addHabitaciones = async ( body: any ) => {
+    const client = await pool.connect();
     try {
         console.log('***** Añadiendo datos del tablero *****');
 
@@ -120,10 +138,13 @@ const addHabitaciones = async ( body: any ) => {
         console.log("ERROR al registrar una habitacion.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const historialHabitaciones = async (body: any) => {
+    const client = await pool.connect();
     try {
  
         body.efectivo_valor_factura = body.efectivo_valor_factura || false;
@@ -160,14 +181,14 @@ const historialHabitaciones = async (body: any) => {
             [body.num_habitacion]
         );
 
-        console.log('QUERY PARA DEBUG:');
-        console.log(
-        query.replace(/\$\d+/g, (match) => {
-            const index = parseInt(match.substring(1)) - 1;
-            const val = values[index];
-            return typeof val === 'string' ? `'${val}'` : val;
-        })
-        );
+        // console.log('QUERY PARA DEBUG:');
+        // console.log(
+        //     query.replace(/\$\d+/g, (match) => {
+        //         const index = parseInt(match.substring(1)) - 1;
+        //         const val = values[index];
+        //         return typeof val === 'string' ? `'${val}'` : val;
+        //     })
+        // );
 
         return {
             isError: false,
@@ -177,9 +198,10 @@ const historialHabitaciones = async (body: any) => {
         console.log("ERROR al registrar una habitación.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 };
-
 
 function getCurrentDateTime(): string {
     const now = new Date();
@@ -195,6 +217,7 @@ function getCurrentDateTime(): string {
 }
 
 const historial = async ( ) => {
+    const client = await pool.connect();
     try {
        
         const queryResult = await pool.query(`
@@ -214,12 +237,14 @@ const historial = async ( ) => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const updateHistorial = async ( body: any ) => {
-    try {
-        
+    const client = await pool.connect();
+    try {        
         const queryResult = await pool.query(`
             UPDATE historial SET
               num_habitacion = $1,
@@ -248,10 +273,13 @@ const updateHistorial = async ( body: any ) => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const deleteHabitaciones = async ( num_habitacion: any ) => {
+    const client = await pool.connect();
     try {
 
         const queryResult = await pool.query(`delete from tablero where num_habitacion = ${num_habitacion};`);
@@ -264,10 +292,13 @@ const deleteHabitaciones = async ( num_habitacion: any ) => {
         console.log("ERROR al eliminar huesped de la habitacion.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const editar_tablero = async ( body: any ) => {
+    const client = await pool.connect();
     try { 
 
         const queryResult = await pool.query(`UPDATE tablero SET  hora_llegada = '${body.hora_llegada}', aseo = '${body.aseo}',
@@ -282,10 +313,13 @@ const editar_tablero = async ( body: any ) => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const validateSocio = async ( cod_socio: any ) => {
+    const client = await pool.connect();
     try { 
     
         const queryResult = await pool.query(
@@ -301,10 +335,13 @@ const validateSocio = async ( cod_socio: any ) => {
            console.log("ERROR al registrar usuario en la base de datos.");
            console.log(error);
            throw error;
-       }
+       }finally {
+        client.release();
+    }
 }
 
 const cuadre_caja = async ( body: any ) => {
+    const client = await pool.connect();
     try { 
      
          const values = body
@@ -324,14 +361,16 @@ const cuadre_caja = async ( body: any ) => {
            console.log("ERROR al registrar usuario en la base de datos.");
            console.log(error);
            throw error;
-       }
+       }finally {
+        client.release();
+    }
 }
 
 const flujoEfectivo = async ( ) => {
+    const client = await pool.connect();
     try {
         
-        const queryResult = await pool.query(
-            `        
+        const queryResult = await pool.query( `        
                 SELECT 
                     SUM(CASE 
                             WHEN id <> 1 AND efectivo ~ '^[0-9]+$' 
@@ -354,10 +393,13 @@ const flujoEfectivo = async ( ) => {
         console.log("ERROR al cargar el flujo de caja de la base de datos.");
         console.log(error);
         throw error;        
+    }finally {
+        client.release();
     }
 }
 
 const totalEfectivo = async ( ) => {
+    const client = await pool.connect();
     try {
         
         const queryResult = await pool.query(
@@ -372,40 +414,43 @@ const totalEfectivo = async ( ) => {
         console.log("ERROR al cargar el flujo de caja de la base de datos.");
         console.log(error);
         throw error;        
+    }finally {
+        client.release();
     }
 }
 
 const efectivo = async (body: any) => {
+    const client = await pool.connect();
     try {
-      const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, '');
-      const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.'));
-      const baseString = body.base.replace('$', '').replace(/\s/g, '');
-      const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.'));
-      const totalString = body.total.replace('$', '').replace(/\s/g, '');
-      const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.'));
-      const pagosRealizadosString = body.pagosRealizados.replace('$', '').replace(/\s/g, '');
-      const pagosRealizadosNumber = parseFloat(pagosRealizadosString.replace('.', '').replace(',', '.'));
-  
-      const processedData = {
-        base: baseNumber,
-        efectivoDelDia: efectivoNumber,
-        pagosRealizados: pagosRealizadosNumber,
-        total: totalNumber
-      };
-  
-      const { rowCount } = await pool.query( `SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
-  
-      if (rowCount === 0) {
-        await pool.query(
-          `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario, turno, pagosdeldia, fechaturno)
-            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)`,
-          [ processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario, body.turno, processedData.pagosRealizados ]
-        );
-      }
-  
-      await pool.query('DELETE FROM efectivoDia WHERE id <> 1;');
-  
-      await pool.query(`UPDATE gastosdiarios SET historial = true WHERE historial = false;`)
+        const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, '');
+        const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.'));
+        const baseString = body.base.replace('$', '').replace(/\s/g, '');
+        const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.'));
+        const totalString = body.total.replace('$', '').replace(/\s/g, '');
+        const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.'));
+        const pagosRealizadosString = body.pagosRealizados.replace('$', '').replace(/\s/g, '');
+        const pagosRealizadosNumber = parseFloat(pagosRealizadosString.replace('.', '').replace(',', '.'));
+    
+        const processedData = {
+            base: baseNumber,
+            efectivoDelDia: efectivoNumber,
+            pagosRealizados: pagosRealizadosNumber,
+            total: totalNumber
+        };
+    
+        const { rowCount } = await pool.query( `SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
+    
+        if (rowCount === 0) {
+            await pool.query(
+            `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario, turno, pagosdeldia, fechaturno)
+                VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)`,
+            [ processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario, body.turno, processedData.pagosRealizados ]
+            );
+        }
+    
+        await pool.query('DELETE FROM efectivoDia WHERE id <> 1;');
+    
+        await pool.query(`UPDATE gastosdiarios SET historial = true WHERE historial = false;`)
 
       return {
         isError: false,
@@ -415,10 +460,13 @@ const efectivo = async (body: any) => {
       console.error('ERROR al insertar el flujo de caja en la base de datos.');
       console.error(error);
       throw error;
+    }finally {
+        client.release();
     }
 };
   
 const updateBase = async (body: any) => {
+    const client = await pool.connect();
     try {
         
         await pool.query(`update efectivoDia set efectivo =  ${body.inputValue} where id = 1`);
@@ -429,10 +477,13 @@ const updateBase = async (body: any) => {
         };
     } catch (error) {
         throw error;        
+    }finally {
+        client.release();
     }
 }
 
 const historialcajaBase = async () => {
+    const client = await pool.connect();
     try {
         
         const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario, pagosdeldia as pagos, turno
@@ -444,10 +495,13 @@ const historialcajaBase = async () => {
         };
     } catch (error) {
         throw error;        
+    }finally {
+        client.release();
     }
 }
 
 const historialGraficos = async (filtros: { socio?: string, fechasistema?: string } = {}) => {
+    const client = await pool.connect();
     try {
         
         let baseQuery = `
@@ -490,10 +544,13 @@ const historialGraficos = async (filtros: { socio?: string, fechasistema?: strin
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const habitacionesDisponibles = async () => {
+    const client = await pool.connect();
     try {
         
         const queryResult = await pool.query(`SELECT num_habitacion FROM habitaciones WHERE estado = 'Disponible' `);
@@ -506,10 +563,13 @@ const habitacionesDisponibles = async () => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const insertGastosDiarios = async (body: any) => {
+    const client = await pool.connect();
     try {
                
         const queryResult = await pool.query(`
@@ -524,10 +584,13 @@ const insertGastosDiarios = async (body: any) => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const getGastosDiarios = async () => {
+    const client = await pool.connect();
     try {
               
         const queryResult = await pool.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios ORDER BY fecha DESC;`);
@@ -540,10 +603,13 @@ const getGastosDiarios = async () => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
     }
 }
 
 const totalGastosDiarios = async () => {
+    const client = await pool.connect();
     try {
               
         const queryResult = await pool.query(`SELECT SUM(efectivodia) AS total_actual FROM gastosdiarios WHERE historial = false;`);
@@ -556,6 +622,28 @@ const totalGastosDiarios = async () => {
         console.log("ERROR al registrar usuario en la base de datos.");
         console.log(error);
         throw error;
+    }finally {
+        client.release();
+    }
+}
+
+const internoPlaca = async (interno: string) => {
+    const client = await pool.connect();
+    try {
+              
+        const queryResult = await pool.query(`SELECT cod_socio AS socio, placa
+                FROM  socios WHERE cod_interno = $1`, [interno] );
+        
+        return {
+            isError: false,
+            data: queryResult.rows[0]
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }finally {
+        client.release();
     }
 }
 
@@ -582,5 +670,6 @@ export default {
     historialGraficos,
     habitacionesDisponibles,
     insertGastosDiarios,
-    getGastosDiarios
+    getGastosDiarios,
+    internoPlaca
 }

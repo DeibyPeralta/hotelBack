@@ -3,7 +3,9 @@ import tableroService from '../../servicio/tablero/tablero.service';
 
 const vista = async (req: Request, res: Response) => {
     try {
-        const response: any = await tableroService.vista();
+        const schema = (req as any).schema;
+ 
+        const response: any = await tableroService.vista(schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -89,9 +91,7 @@ const addHabitaciones = async (req: Request, res: Response) => {
 
 const historialHabitaciones = async (req: Request, res: Response) => {
     try {
-        const { socio, usuario } = req.body; 
-
-        console.log('Usuario que hizo el registro:', usuario);
+        const { socio } = req.body; 
 
         const validateSocio = await tableroService.validateSocio(socio);
 
@@ -298,6 +298,19 @@ const totalGastosDiarios = async (req: Request, res: Response) => {
     }
 }
 
+const internoPlaca = async (req: Request, res: Response) => {
+    try { 
+        const interno = req.params.interno;
+        const response = await tableroService.internoPlaca( interno );
+      
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista, 
     maxhabitaciones, 
@@ -320,5 +333,6 @@ export default {
     habitacionesDisponibles,
     insertGastosDiarios,
     getGastosDiarios,
-    totalGastosDiarios
+    totalGastosDiarios,
+    internoPlaca
 }

@@ -5,10 +5,11 @@ import loginService from '../../servicio/usuarios/login.service';
 
 const login = async (req: Request, res: Response) => {
     try {
+        const schema = (req as any).schema
         const correo = req.body.correo;
         const password = req.body.password;
 
-        const response: any  = await loginService.login(correo, password);
+        const response: any  = await loginService.login(correo, password, schema);
         
             if(response.isError == true){
                 return res.status(200).json(response)
@@ -21,13 +22,14 @@ const login = async (req: Request, res: Response) => {
 
 const registerUser = async (req: Request, res: Response) => {
     try { 
+        const schema = (req as any).schema
         const correo = req.body.correo;
         const password = req.body.password;
         const nombre = req.body.nombre;
         const cedula = req.body.cedula;
         const telefono = req.body.telefono;       
         
-        const responde: any  = await loginService.registerUser(correo, password, nombre, cedula, telefono);
+        const responde: any  = await loginService.registerUser(correo, password, nombre, cedula, telefono, schema);
 
         return res.status(200).json(responde.message)
     } catch (error) {

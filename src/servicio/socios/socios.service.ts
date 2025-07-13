@@ -2,6 +2,7 @@ import dbConfig  from "../../config/dbConfig";
 const pool = dbConfig.pool;
 
 const updateSocios = async (body: any) => {
+    const client = await pool.connect();
     try {
 
         console.log('*** Actualizando socios***');
@@ -38,10 +39,13 @@ const updateSocios = async (body: any) => {
     } catch (error) {
         console.log('error al actualizar los socios');
         console.log(error);
+    }finally {
+        client.release();
     }
 }
 
 const getsocios = async () => {
+    const client = await pool.connect();
     try {
 
         console.log('*** Cargar socios ***');
@@ -54,17 +58,27 @@ const getsocios = async () => {
     } catch (error) {
         console.log('error al cargar los socios');
         console.log(error);
+    }finally {
+        client.release();
     }
 }
 
 const updateSocio = async (data: any) => {
+    const client = await pool.connect();
  
-    const queryResult = await pool.query(`update socios set cod_interno = '${data.cod_interno}', nombre = '${data.nombre}',
-        placa = '${data.placa}', telefono = '${data.telefono}' where cedula = '${data.cedula}';`)
-    
-    return {
-        isError: false,
-        data: queryResult.rows
+    try {
+        const queryResult = await pool.query(`update socios set cod_interno = '${data.cod_interno}', nombre = '${data.nombre}',
+            placa = '${data.placa}', telefono = '${data.telefono}' where cedula = '${data.cedula}';`)
+        
+        return {
+            isError: false,
+            data: queryResult.rows
+        }
+    } catch (error) {
+        console.log('error al cargar los socios');
+        console.log(error);
+    }finally {
+        client.release();
     }
 }
 
