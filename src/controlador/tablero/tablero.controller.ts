@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import tableroService from '../../servicio/tablero/tablero.service';
 
-const vista = async (req: Request, res: Response) => {
+const 
+vista = async (req: Request, res: Response) => {
     try {
         const schema = (req as any).schema;
  
@@ -15,7 +16,8 @@ const vista = async (req: Request, res: Response) => {
 
 const maxhabitaciones = async (req: Request, res: Response) => {
     try {
-        const response: any = await tableroService.maxhabitaciones();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.maxhabitaciones(schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -27,6 +29,7 @@ const maxhabitaciones = async (req: Request, res: Response) => {
 
 const addTablero = async (req: Request, res: Response) => {
     try { 
+        const schema = (req as any).schema;
         const interno = req.body.interno
         const num_habitacion = req.body.num_habitacion
         const hora_llegada = req.body.hora_llegada
@@ -37,7 +40,7 @@ const addTablero = async (req: Request, res: Response) => {
         const fechaActual = new Date();
         const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
 
-        const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada);
+        const response: any = await tableroService.addTablero(interno, num_habitacion, hora_llegada, aseo, llamada, destino, fechaFormateada, schema);
  
         return res.status(200).json(response);
     } catch (error) {
@@ -49,7 +52,8 @@ const addTablero = async (req: Request, res: Response) => {
 
 const habitaciones = async (req: Request, res: Response) => {
     try {
-        const response: any = await tableroService.habitaciones();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.habitaciones(schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -61,10 +65,10 @@ const habitaciones = async (req: Request, res: Response) => {
 
 const editarHabitaciones = async (req: Request, res: Response) => {
     try { 
-
+        const schema = (req as any).schema;
         const body = req.body;
        
-        const response: any = await tableroService.editar_Habitaciones( body );
+        const response: any = await tableroService.editar_Habitaciones( body, schema );
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -76,10 +80,10 @@ const editarHabitaciones = async (req: Request, res: Response) => {
 
 const addHabitaciones = async (req: Request, res: Response) => {
     try { 
-        
+        const schema = (req as any).schema;
         const body = req.body; 
 
-        const response: any = await tableroService.addHabitaciones( body );
+        const response: any = await tableroService.addHabitaciones( body, schema );
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -91,9 +95,10 @@ const addHabitaciones = async (req: Request, res: Response) => {
 
 const historialHabitaciones = async (req: Request, res: Response) => {
     try {
+        const schema = (req as any).schema;
         const { socio } = req.body; 
 
-        const validateSocio = await tableroService.validateSocio(socio);
+        const validateSocio = await tableroService.validateSocio(socio, schema);
 
         if (validateSocio.isError || !validateSocio.data) {
             return res.status(404).json({  
@@ -102,7 +107,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
             });
         }
 
-        const response: any = await tableroService.historialHabitaciones(req.body);
+        const response: any = await tableroService.historialHabitaciones(req.body, schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -114,7 +119,8 @@ const historialHabitaciones = async (req: Request, res: Response) => {
 
 const historial = async (req: Request, res: Response) => {
     try {
-        const response: any = await tableroService.historial();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.historial(schema);
       
         return res.status(200).json(response.data);
     } catch (error) {
@@ -126,8 +132,8 @@ const historial = async (req: Request, res: Response) => {
 
 const updateHistorial = async (req: Request, res: Response) => {
     try {
-            
-        await tableroService.updateHistorial(req.body);
+        const schema = (req as any).schema;
+        await tableroService.updateHistorial(req.body, schema);
       
         res.status(200).json({ message: 'Historial actualizado correctamente' });
     } catch (error) {
@@ -139,8 +145,10 @@ const updateHistorial = async (req: Request, res: Response) => {
   
 const deleteHabitaciones = async (req: Request, res: Response) => {
     try { 
+        const schema = (req as any).schema;
         const numHabitacion = req.params.num_habitacion;
-        const response: any = await tableroService.deleteHabitaciones( numHabitacion );
+
+        const response: any = await tableroService.deleteHabitaciones( numHabitacion, schema );
         
         return res.status(200).json(response.data);
     } catch (error) {
@@ -153,9 +161,10 @@ const deleteHabitaciones = async (req: Request, res: Response) => {
 const editar_tablero = async (req: Request, res: Response) => {
     try { 
 
+        const schema = (req as any).schema;
         const body = req.body;
        
-        const response: any = await tableroService.editar_tablero( body );
+        const response: any = await tableroService.editar_tablero( body, schema );
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -168,9 +177,10 @@ const editar_tablero = async (req: Request, res: Response) => {
 const cuadre_caja = async (req: Request, res: Response) => {
     try { 
 
+        const schema = (req as any).schema;
         const body = req.body;
         
-        await tableroService.cuadre_caja( body );
+        await tableroService.cuadre_caja( body, schema );
         
         return res.status(200);
     } catch (error) {
@@ -183,7 +193,8 @@ const cuadre_caja = async (req: Request, res: Response) => {
 const flujoEfectivo = async (req: Request, res: Response) => {
     try { 
         
-        const response: any = await tableroService.flujoEfectivo();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.flujoEfectivo(schema);
    
         return res.status(200).json(response.data);
     } catch (error) {
@@ -195,8 +206,8 @@ const flujoEfectivo = async (req: Request, res: Response) => {
 
 const totalEfectivo = async (req: Request, res: Response) => {
     try { 
-        
-        const response: any = await tableroService.totalEfectivo();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.totalEfectivo(schema);
    
         return res.status(200).json(response.data);
     } catch (error) {
@@ -209,7 +220,8 @@ const totalEfectivo = async (req: Request, res: Response) => {
 const efectivo = async (req: Request, res: Response) => {
     try { 
         
-        const response: any = await tableroService.efectivo(req.body);
+        const schema = (req as any).schema;
+        const response: any = await tableroService.efectivo(req.body, schema);
         
         return res.status(200).json(response);
     } catch (error) {
@@ -219,7 +231,9 @@ const efectivo = async (req: Request, res: Response) => {
 
 const updateBase = async (req: Request, res: Response) => {
     try { 
-        const response: any = await tableroService.updateBase(req.body);
+
+        const schema = (req as any).schema;
+        const response: any = await tableroService.updateBase(req.body, schema);
    
         return res.status(200).json(response);
     } catch (error) {
@@ -229,7 +243,8 @@ const updateBase = async (req: Request, res: Response) => {
 
 const historialcajaBase = async (req: Request, res: Response) => {
     try { 
-        const response: any = await tableroService.historialcajaBase();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.historialcajaBase(schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -239,12 +254,13 @@ const historialcajaBase = async (req: Request, res: Response) => {
 
 const historialGraficos = async (req: Request, res: Response) => {
     try {
+        const schema = (req as any).schema;
         const { socio, destino, fechasistema } = req.query;
         const filtros: any = {};
         if (socio) filtros.socio = socio;
         if (destino) filtros.destino = destino;
         if (fechasistema) filtros.fechasistema = fechasistema;
-        const response: any = await tableroService.historialGraficos(filtros);
+        const response: any = await tableroService.historialGraficos(filtros, schema);
       
         return res.status(200).json(response.data);
     } catch (error) {
@@ -256,8 +272,8 @@ const historialGraficos = async (req: Request, res: Response) => {
 
 const habitacionesDisponibles = async (req: Request, res: Response) => {
     try { 
-        
-        const response: any = await tableroService.habitacionesDisponibles();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.habitacionesDisponibles(schema);
         
         return res.status(200).json(response);
     } catch (error) {
@@ -267,8 +283,8 @@ const habitacionesDisponibles = async (req: Request, res: Response) => {
 
 const insertGastosDiarios = async (req: Request, res: Response) => {
     try { 
-        
-        const response: any = await tableroService.insertGastosDiarios(req.body);
+        const schema = (req as any).schema;
+        const response: any = await tableroService.insertGastosDiarios(req.body, schema);
        
         return res.status(200).json('Gastos insertados correctamente');
     } catch (error) {
@@ -278,8 +294,8 @@ const insertGastosDiarios = async (req: Request, res: Response) => {
 
 const getGastosDiarios = async (req: Request, res: Response) => {
     try { 
-        
-        const response: any = await tableroService.getGastosDiarios();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.getGastosDiarios(schema);
             
         return res.status(200).json(response);
     } catch (error) {
@@ -289,8 +305,8 @@ const getGastosDiarios = async (req: Request, res: Response) => {
 
 const totalGastosDiarios = async (req: Request, res: Response) => {
     try { 
-        
-        const response: any = await tableroService.totalGastosDiarios();
+        const schema = (req as any).schema;
+        const response: any = await tableroService.totalGastosDiarios(schema);
        
         return res.status(200).json(response);
     } catch (error) {
@@ -300,8 +316,9 @@ const totalGastosDiarios = async (req: Request, res: Response) => {
 
 const internoPlaca = async (req: Request, res: Response) => {
     try { 
+        const schema = (req as any).schema;
         const interno = req.params.interno;
-        const response = await tableroService.internoPlaca( interno );
+        const response = await tableroService.internoPlaca( interno, schema );
       
         return res.status(200).json(response.data);
     } catch (error) {

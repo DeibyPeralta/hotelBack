@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import sociosService from "../../servicio/socios/socios.service";
 import xlsx from 'xlsx';
+
 const updateSocios = async(req: Request, res: Response) => {
     try {
+        const schema = (req as any).schema;
         const files = (req as any).files;
         
         if (!files || Object.keys(files).length === 0) {
@@ -18,7 +20,7 @@ const updateSocios = async(req: Request, res: Response) => {
 
         const data = xlsx.utils.sheet_to_json(sheet);
 
-        const response: any = await sociosService.updateSocios(data);
+        const response: any = await sociosService.updateSocios(data, schema);
         return res.status(200).json(response.data);
     } catch (error) {
         console.log("ERROR ");
@@ -29,8 +31,8 @@ const updateSocios = async(req: Request, res: Response) => {
 
 const getsocios = async(req: Request, res: Response) => {
     try {
-        
-        const response: any = await sociosService.getsocios();
+        const schema = (req as any).schema;
+        const response: any = await sociosService.getsocios(schema);
 
         return res.status(200).json(response.data);
     } catch (error) {
@@ -42,8 +44,8 @@ const getsocios = async(req: Request, res: Response) => {
 
 const updateSocio = async(req: Request, res: Response) => {
     try {
-        
-        const response: any = await sociosService.updateSocio(req.body);
+        const schema = (req as any).schema;
+        const response: any = await sociosService.updateSocio(req.body, schema);
 
         return res.status(200).json(response.data);
     } catch (error) {

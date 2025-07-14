@@ -16,7 +16,7 @@ const vista = async (schema: string) => {
             LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion 
             LEFT JOIN socios s ON t.interno = s.cod_interno
             ORDER BY h.num_habitacion ASC `);
-
+        
         return {
             isError: false,
             data: queryResult.rows
@@ -29,12 +29,12 @@ const vista = async (schema: string) => {
     }
 };
 
-const maxhabitaciones = async () => {
+const maxhabitaciones = async (schema: string) => {
     const client = await pool.connect();
     try {
         
-        // await client.query(`SET search_path TO ${schema}`);   
-        const queryResult = await pool.query(`SELECT MAX(num_habitacion) AS max_num_habitacion FROM habitaciones;`);
+        await client.query(`SET search_path TO ${schema}`); 
+        const queryResult = await client.query(`SELECT MAX(num_habitacion) AS max_num_habitacion FROM habitaciones;`);
 
         return {
             isError: false,
@@ -49,12 +49,13 @@ const maxhabitaciones = async () => {
     }
 }
 
-const addTablero = async ( interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any ) => {
+const addTablero = async ( interno: string, num_habitacion: string, hora_llegada: string, aseo: string, llamada: string, destino: string, fecha_llegada: any, schema: string ) => {
     const client = await pool.connect();
     try {           
-        // Verificar si la habitación está disponible
-        const habitacionResult = await pool.query( `SELECT estado FROM habitaciones WHERE num_habitacion = $1`, [num_habitacion] );
-        
+        await client.query(`SET search_path TO ${schema}`);
+
+        const habitacionResult = await client.query(`SELECT estado FROM habitaciones WHERE num_habitacion = $1`, [num_habitacion]);
+           
         const estado = habitacionResult.rows[0].estado;
     
         if (estado.toLowerCase() !== 'disponible') {
@@ -65,13 +66,15 @@ const addTablero = async ( interno: string, num_habitacion: string, hora_llegada
         }
     
         // Insertar en tablero
-        const queryResult = await pool.query(
-            `INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada)
-            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`, [interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada] );
+        const query = `INSERT INTO tablero (interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
+        
+        const values = [interno, num_habitacion, hora_llegada, aseo, llamada, destino, fecha_llegada] 
     
-        // Actualizar estado de la habitación
-        await pool.query( `UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = $1`, [num_habitacion] );
-    
+        const queryResult = await client.query(query, values);
+
+        await client.query(`UPDATE habitaciones SET estado = 'Ocupada' WHERE num_habitacion = $1`, [num_habitacion]);               
+
         return {
             isError: false,
             message: 'Habitación registrada correctamente',
@@ -84,10 +87,13 @@ const addTablero = async ( interno: string, num_habitacion: string, hora_llegada
     }
 };
   
-const habitaciones = async () => {
+const habitaciones = async (schema: string) => {
     const client = await pool.connect();
     try {
-        const queryResult = await pool.query(`select estado, num_habitacion, comentario from habitaciones order by num_habitacion;`);
+
+        await client.query(`SET search_path TO ${schema}`); 
+
+        const queryResult = await client.query(`select estado, num_habitacion, comentario from habitaciones order by num_habitacion;`);
 
         return {
             isError: false,
@@ -102,12 +108,14 @@ const habitaciones = async () => {
     }
 }
 
-const editar_Habitaciones = async ( body: any ) => {
+const editar_Habitaciones = async (body: any, schema: string) => {
     const client = await pool.connect();
     try { 
      
-        const queryResult = await pool.query(`UPDATE habitaciones SET estado = '${body.estado}', comentario = '${body.comentario}'
-                 WHERE num_habitacion = ${body.num_habitacion}; `);
+        await client.query(`SET search_path TO ${schema}`); 
+
+        await client.query(`UPDATE habitaciones SET estado = $1, comentario = $2
+                     WHERE num_habitacion = $3`, [body.estado, body.comentario, body.num_habitacion]);
 
         return {
             isError: false,
@@ -122,14 +130,15 @@ const editar_Habitaciones = async ( body: any ) => {
     }
 }
 
-const addHabitaciones = async ( body: any ) => {
+const addHabitaciones = async ( body: any, schema: string) => {
     const client = await pool.connect();
     try {
-        console.log('***** Añadiendo datos del tablero *****');
+        // console.log('***** Añadiendo datos del tablero *****');
+        await client.query(`SET search_path TO ${schema}`);   
 
-        await pool.query(`INSERT INTO habitaciones (estado, num_habitacion, comentario)
-                    VALUES ('${body.estado}', ${body.num_habitacion}, '${body.comentario}');`);
-                 
+        await client.query(`INSERT INTO habitaciones (estado, num_habitacion, comentario)
+            VALUES ($1, $2, $3)`, [body.estado, body.num_habitacion, body.comentario]);
+   
         return {
             isError: false,
             data: 'ok'
@@ -143,10 +152,12 @@ const addHabitaciones = async ( body: any ) => {
     }
 }
 
-const historialHabitaciones = async (body: any) => {
+const historialHabitaciones = async (body: any, schema: string) => {
     const client = await pool.connect();
     try {
  
+        await client.query(`SET search_path TO ${schema}`);   
+
         body.efectivo_valor_factura = body.efectivo_valor_factura || false;
         body.efectivo_valor_ropa = body.efectivo_valor_ropa || false;
         body.efectivo_tienda = body.efectivo_tienda || false;
@@ -174,12 +185,9 @@ const historialHabitaciones = async (body: any) => {
             body.ropa, body.usuario
         ];
 
-        await pool.query(query, values);
+        await client.query(query, values);
 
-        await pool.query(
-            `UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`,
-            [body.num_habitacion]
-        );
+        await client.query(  `UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion] );
 
         // console.log('QUERY PARA DEBUG:');
         // console.log(
@@ -216,11 +224,13 @@ function getCurrentDateTime(): string {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-const historial = async ( ) => {
+const historial = async (schema:string ) => {
     const client = await pool.connect();
     try {
        
-        const queryResult = await pool.query(`
+        await client.query(`SET search_path TO ${schema}`);  
+
+        const queryResult = await client.query(`
             SELECT h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
 					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, h.notaJustificante,
                     h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema, h.efectivo_valor_ropa, h.ropa, h.registered_by
@@ -242,10 +252,13 @@ const historial = async ( ) => {
     }
 }
 
-const updateHistorial = async ( body: any ) => {
+const updateHistorial = async ( body: any, schema: string) => {
     const client = await pool.connect();
     try {        
-        const queryResult = await pool.query(`
+
+        await client.query(`SET search_path TO ${schema}`);     
+
+        const queryResult = await client.query(`
             UPDATE historial SET
               num_habitacion = $1,
               interno = $2, hora_llegada = $3, valor_factura = $4, comentario = $5, hora_salida = $6, fechasalida = $7,
@@ -278,11 +291,13 @@ const updateHistorial = async ( body: any ) => {
     }
 }
 
-const deleteHabitaciones = async ( num_habitacion: any ) => {
+const deleteHabitaciones = async ( num_habitacion: any, schema: string) => {
     const client = await pool.connect();
     try {
 
-        const queryResult = await pool.query(`delete from tablero where num_habitacion = ${num_habitacion};`);
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query(`delete from tablero where num_habitacion = $1`, [num_habitacion]);
 
         return {
             isError: false,
@@ -297,14 +312,16 @@ const deleteHabitaciones = async ( num_habitacion: any ) => {
     }
 }
 
-const editar_tablero = async ( body: any ) => {
+const editar_tablero = async ( body: any, schema: string) => {
     const client = await pool.connect();
     try { 
 
-        const queryResult = await pool.query(`UPDATE tablero SET  hora_llegada = '${body.hora_llegada}', aseo = '${body.aseo}',
-            llamada = '${body.llamada}', destino = '${body.destino}'
-            WHERE  num_habitacion = ${body.num_habitacion} OR interno = '${body.interno}'; `);
+        await client.query(`SET search_path TO ${schema}`);
 
+        await client.query(`UPDATE tablero SET  hora_llegada = $1, aseo = $2, llamada = $3, destino = $4
+            WHERE  num_habicion = $5 OR interno = $6`, 
+            [body.hora_llegada, body.aseo, body.llamada, body.destino, body.num_habitacion, body.interno]);
+    
         return {
             isError: false,
             data: 'ok'
@@ -318,14 +335,12 @@ const editar_tablero = async ( body: any ) => {
     }
 }
 
-const validateSocio = async ( cod_socio: any ) => {
+const validateSocio = async ( cod_socio: any, schema: string) => {
     const client = await pool.connect();
     try { 
+        await client.query(`SET search_path TO ${schema}`);  
     
-        const queryResult = await pool.query(
-            `SELECT nombre FROM socios 
-                WHERE cod_socio = $1 OR LOWER(nombre) ILIKE '%' || LOWER($1) || '%'`,
-            [cod_socio] );
+        const queryResult = await client.query( `SELECT nombre FROM socios WHERE cod_socio = $1 OR LOWER(nombre) ILIKE '%' || LOWER($1) || '%'`,  [cod_socio] );
    
            return {
                isError: false,
@@ -340,10 +355,12 @@ const validateSocio = async ( cod_socio: any ) => {
     }
 }
 
-const cuadre_caja = async ( body: any ) => {
+const cuadre_caja = async ( body: any, schema: string) => {
     const client = await pool.connect();
     try { 
      
+        await client.query(`SET search_path TO ${schema}`);
+
          const values = body
             .map((row: any, index: any) => `($1, $${index * 2 + 2}, $${index * 2 + 3})`)
             .join(", ");
@@ -354,7 +371,7 @@ const cuadre_caja = async ( body: any ) => {
             
             const query = ` INSERT INTO efectivoDia (fechaSistema, efectivo, value) VALUES ${values} `;
   
-            await pool.query(query, [fechaHoraActual, ...flatValues]);
+            await client.query(query, [fechaHoraActual, ...flatValues]);
             console.log("Inserción exitosa");
         
        } catch (error) {
@@ -366,11 +383,13 @@ const cuadre_caja = async ( body: any ) => {
     }
 }
 
-const flujoEfectivo = async ( ) => {
+const flujoEfectivo = async (schema: string) => {
     const client = await pool.connect();
     try {
         
-        const queryResult = await pool.query( `        
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query( `        
                 SELECT 
                     SUM(CASE 
                             WHEN id <> 1 AND efectivo ~ '^[0-9]+$' 
@@ -398,12 +417,13 @@ const flujoEfectivo = async ( ) => {
     }
 }
 
-const totalEfectivo = async ( ) => {
+const totalEfectivo = async (schema: string)=> {
     const client = await pool.connect();
     try {
+
+        await client.query(`SET search_path TO ${schema}`);
         
-        const queryResult = await pool.query(
-            `select id, base, efectivoDia, total, fecha from historialEfectivo order by fecha DESC;`);
+        const queryResult = await client.query(`select id, base, efectivoDia, total, fecha from historialEfectivo order by fecha DESC;`);
      
            return {
                isError: false,
@@ -419,9 +439,12 @@ const totalEfectivo = async ( ) => {
     }
 }
 
-const efectivo = async (body: any) => {
+const efectivo = async (body: any, schema: string) => {
     const client = await pool.connect();
     try {
+
+        await client.query(`SET search_path TO ${schema}`);
+
         const efectivoString = body.efectivoDelDia.replace('$', '').replace(/\s/g, '');
         const efectivoNumber = parseFloat(efectivoString.replace('.', '').replace(',', '.'));
         const baseString = body.base.replace('$', '').replace(/\s/g, '');
@@ -438,19 +461,19 @@ const efectivo = async (body: any) => {
             total: totalNumber
         };
     
-        const { rowCount } = await pool.query( `SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
+        const { rowCount } = await client.query(`SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
     
         if (rowCount === 0) {
-            await pool.query(
+            await client.query(
             `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario, turno, pagosdeldia, fechaturno)
                 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)`,
             [ processedData.base, processedData.efectivoDelDia, processedData.total, body.usuario, body.turno, processedData.pagosRealizados ]
             );
         }
     
-        await pool.query('DELETE FROM efectivoDia WHERE id <> 1;');
+        await client.query('DELETE FROM efectivoDia WHERE id <> 1;');
     
-        await pool.query(`UPDATE gastosdiarios SET historial = true WHERE historial = false;`)
+        await client.query(`UPDATE gastosdiarios SET historial = true WHERE historial = false;`)
 
       return {
         isError: false,
@@ -465,11 +488,12 @@ const efectivo = async (body: any) => {
     }
 };
   
-const updateBase = async (body: any) => {
+const updateBase = async (body: any, schema: string) => {
     const client = await pool.connect();
     try {
         
-        await pool.query(`update efectivoDia set efectivo =  ${body.inputValue} where id = 1`);
+        await client.query(`SET search_path TO ${schema}`);
+        await client.query(`update efectivoDia set efectivo =  $1 where id = 1`, [body.inputValue]);
 
         return {
             isError: false,
@@ -482,11 +506,13 @@ const updateBase = async (body: any) => {
     }
 }
 
-const historialcajaBase = async () => {
+const historialcajaBase = async (schema: string) => {
     const client = await pool.connect();
     try {
         
-        const queryResult = await pool.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario, pagosdeldia as pagos, turno
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query(`SELECT id, base, efectivodia, total, TO_CHAR(fecha, 'DD-MM-YYYY') AS fecha, usuario, pagosdeldia as pagos, turno
              FROM historialEfectivo ORDER BY fecha DESC`);
 
         return {
@@ -500,9 +526,11 @@ const historialcajaBase = async () => {
     }
 }
 
-const historialGraficos = async (filtros: { socio?: string, fechasistema?: string } = {}) => {
+const historialGraficos = async (filtros: { socio?: string, fechasistema?: string } = {}, schema: string) => {
     const client = await pool.connect();
     try {
+
+        await client.query(`SET search_path TO ${schema}`);
         
         let baseQuery = `
             SELECT interno, num_habitacion, hora_llegada, aseo, llamada, destino, comentario, hora_salida, s.placa, 
@@ -534,7 +562,7 @@ const historialGraficos = async (filtros: { socio?: string, fechasistema?: strin
         }
         baseQuery += ' ORDER BY h.fechasistema DESC';
 
-        const queryResult = await pool.query(baseQuery, values);
+        const queryResult = await client.query(baseQuery, values);
 
         return {
             isError: false,
@@ -549,11 +577,12 @@ const historialGraficos = async (filtros: { socio?: string, fechasistema?: strin
     }
 }
 
-const habitacionesDisponibles = async () => {
+const habitacionesDisponibles = async (schema: string) => {
     const client = await pool.connect();
     try {
         
-        const queryResult = await pool.query(`SELECT num_habitacion FROM habitaciones WHERE estado = 'Disponible' `);
+        await client.query(`SET search_path TO ${schema}`);
+        const queryResult = await client.query(`SELECT num_habitacion FROM habitaciones WHERE estado = 'Disponible' `);
       
         return {
             isError: false,
@@ -568,11 +597,13 @@ const habitacionesDisponibles = async () => {
     }
 }
 
-const insertGastosDiarios = async (body: any) => {
+const insertGastosDiarios = async (body: any, schema: string) => {
     const client = await pool.connect();
     try {
-               
-        const queryResult = await pool.query(`
+
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query(`
             INSERT INTO gastosdiarios(efectivodia, descripcion, usuario, historial, fecha) 
                 VALUES($1, $2, $3, false, now()) RETURNING *`, [body.valor, body.descripcion, body.usuario]);
       
@@ -589,11 +620,13 @@ const insertGastosDiarios = async (body: any) => {
     }
 }
 
-const getGastosDiarios = async () => {
+const getGastosDiarios = async (schema: string) => {
     const client = await pool.connect();
     try {
-              
-        const queryResult = await pool.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios ORDER BY fecha DESC;`);
+        
+        await client.query(`SET search_path TO ${schema}`);
+    
+        const queryResult = await client.query(`SELECT id, efectivodia, descripcion, usuario, historial, fecha FROM gastosdiarios ORDER BY fecha DESC;`);
        
         return {
             isError: false,
@@ -608,11 +641,13 @@ const getGastosDiarios = async () => {
     }
 }
 
-const totalGastosDiarios = async () => {
+const totalGastosDiarios = async (schema: string) => {
     const client = await pool.connect();
     try {
-              
-        const queryResult = await pool.query(`SELECT SUM(efectivodia) AS total_actual FROM gastosdiarios WHERE historial = false;`);
+        
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query(`SELECT SUM(efectivodia) AS total_actual FROM gastosdiarios WHERE historial = false;`);
         
         return {
             isError: false,
@@ -627,11 +662,13 @@ const totalGastosDiarios = async () => {
     }
 }
 
-const internoPlaca = async (interno: string) => {
+const internoPlaca = async (interno: string, schema: string) => {
     const client = await pool.connect();
     try {
-              
-        const queryResult = await pool.query(`SELECT cod_socio AS socio, placa
+        
+        await client.query(`SET search_path TO ${schema}`);
+  
+        const queryResult = await client.query(`SELECT cod_socio AS socio, placa
                 FROM  socios WHERE cod_interno = $1`, [interno] );
         
         return {
@@ -646,6 +683,20 @@ const internoPlaca = async (interno: string) => {
         client.release();
     }
 }
+
+// function printQueryWithValues(query: string, values: any[]) {
+//     // printQueryWithValues(validate, valueValidate);
+//   const interpolated = query.replace(/\$\d+/g, (match: string) => {
+//     const index = parseInt(match.substring(1), 10) - 1;
+//     const val = values[index];
+//     if (typeof val === 'string') {
+//       return `'${val.replace(/'/g, "''")}'`; // escapar comillas simples
+//     }
+//     return val;
+//   });
+//   console.log('🟡 Query ejecutada:');
+//   console.log(interpolated);
+// }
 
 export default {
     vista,

@@ -40,8 +40,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const host = req.headers.host || '';
   const subdomain = host.split('.')[0];
 
-  console.log('Subdominio detectado:', subdomain);
-
   if (subdomain === 'valle' || subdomain === 'cucuta') {
     (req as any).schema = subdomain;
     return next();

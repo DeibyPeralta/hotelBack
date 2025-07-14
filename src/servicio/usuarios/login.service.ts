@@ -15,24 +15,20 @@ const registerUser = async (correo: string, password: string, nombre: string, ce
     try { 
         await client.query(`SET search_path TO ${schema}`);
          
-        const validate = `SELECT cedula FROM usuarios WHERE cedula = $1`;
-        const valueValidate = [cedula]
-
-        const queryResult = await client.query(validate, valueValidate); 
-        
+        const queryResult = await client.query(`SELECT cedula FROM usuarios WHERE cedula = $1`, [cedula]);
+ 
         const validateCedula = queryResult.rows.length > 0 ? queryResult.rows[0].cedula : 0;
            
         if(cedula != validateCedula ){
       
             const encryptedPassword = await hashPassword(password);
 
-
             const query = `INSERT INTO usuarios (correo, password, nombre, cedula, telefono, rol)
                             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (cedula) DO NOTHING;`;
             const values = [correo, encryptedPassword, nombre, cedula, telefono, 2]
 
             await client.query(query, values); 
-           
+         
             return {
                 isError: false,
                 message: 'Usuario registrado'
@@ -104,12 +100,14 @@ const login = async (correo: string, password: string, schema: string) => {
       client.release();
     }
 };
-  
-
-const permisos = async () => {
+ 
+const permisos = async (schema: string) => {
     const client = await pool.connect();
     try {
-        const queryResult = await pool.query(`select id, correo, nombre, telefono, rol from usuarios`);
+        await client.query(`SET search_path TO ${schema}`);
+        const query = `select id, correo, nombre, telefono, rol from usuarios`;
+
+        const queryResult = await client.query(query)
 
         return queryResult.rows
     } catch (error) {
@@ -119,36 +117,71 @@ const permisos = async () => {
     }
 }
 
-const editPermisos = async (correo: string, nombre: string, telefono: string, rol: string, id: string) => {
-    const client = await pool.connect();
-    try {
-      const query = ` UPDATE usuarios
-            SET correo = $1, nombre = $2, telefono = $3, rol = $4
-            WHERE id = $5 RETURNING id, correo, nombre, telefono, rol `;
-  
-      const values = [correo, nombre, telefono, rol, id];
-  
-      const queryResult = await pool.query(query, values);
-  
-      return queryResult.rows[0]; 
-    } catch (error) {
-      console.error("ERROR al editar permisos del usuario:", error);
-      throw error;
-    }finally {
-        client.release();
+const editPermisos = async ( correo: string, nombre: string, telefono: string, rol: string, id: string, password: string, schema: string ) => {
+  const client = await pool.connect();
+  try {
+    await client.query(`SET search_path TO ${schema}`);
+
+    let query: string;
+    let values: any[];
+
+    if (password && password.trim() !== "") {
+      const hashedPassword = await hashPassword(password);
+      query = `
+        UPDATE usuarios
+        SET correo = $1, nombre = $2, telefono = $3, rol = $4, password = $5
+        WHERE id = $6
+        RETURNING id, correo, nombre, telefono, rol; `;
+      values = [correo, nombre, telefono, rol, hashedPassword, id];
+    } else {
+      query = `
+        UPDATE usuarios
+        SET correo = $1, nombre = $2, telefono = $3, rol = $4
+        WHERE id = $5 RETURNING id, correo, nombre, telefono, rol;
+      `;
+      values = [correo, nombre, telefono, rol, id];
     }
+
+    const queryResult = await client.query(query, values);
+    return queryResult.rows[0];
+  } catch (error) {
+    console.error("ERROR al editar permisos del usuario:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
-const deleteUsers = async (id: string) => {
+// const editPermisos = async (correo: string, nombre: string, telefono: string, rol: string, id: string, password: string, schema: string) => {
+//     const client = await pool.connect();
+//     try {
+//         await client.query(`SET search_path TO ${schema}`);
+
+//         const query = ` UPDATE usuarios
+//                 SET correo = $1, nombre = $2, telefono = $3, rol = $4
+//                 WHERE id = $5 RETURNING id, correo, nombre, telefono, rol `;
+    
+//         const values = [correo, nombre, telefono, rol, id];
+    
+//         const queryResult = await client.query(query, values);
+    
+//         return queryResult.rows[0]; 
+//     } catch (error) {
+//       console.error("ERROR al editar permisos del usuario:", error);
+//       throw error;
+//     }finally {
+//         client.release();
+//     }
+// };
+
+const deleteUsers = async (id: string, schema: string) => {
     const client = await pool.connect();
     try {
-      const query = `DELETE FROM usuarios WHERE id = $1`;
-  
-      const values = [id];
-  
-      const queryResult = await pool.query(query, values);
-     
-      return queryResult.rows[0]; 
+        await client.query(`SET search_path TO ${schema}`);
+
+        const queryResult = await client.query(`DELETE FROM usuarios WHERE id = $1`, [id]);
+    
+        return queryResult.rows[0]; 
     } catch (error) {
       console.error("ERROR al editar permisos del usuario:", error);
       throw error;
@@ -157,19 +190,19 @@ const deleteUsers = async (id: string) => {
     }
 };
   
-function printQueryWithValues(query: string, values: any[]) {
-    // printQueryWithValues(validate, valueValidate);
-  const interpolated = query.replace(/\$\d+/g, (match: string) => {
-    const index = parseInt(match.substring(1), 10) - 1;
-    const val = values[index];
-    if (typeof val === 'string') {
-      return `'${val.replace(/'/g, "''")}'`; // escapar comillas simples
-    }
-    return val;
-  });
-  console.log('🟡 Query ejecutada:');
-  console.log(interpolated);
-}
+// function printQueryWithValues(query: string, values: any[]) {
+//     // printQueryWithValues(validate, valueValidate);
+//   const interpolated = query.replace(/\$\d+/g, (match: string) => {
+//     const index = parseInt(match.substring(1), 10) - 1;
+//     const val = values[index];
+//     if (typeof val === 'string') {
+//       return `'${val.replace(/'/g, "''")}'`; // escapar comillas simples
+//     }
+//     return val;
+//   });
+//   console.log('🟡 Query ejecutada:');
+//   console.log(interpolated);
+// }
 
 export default {
     login,
