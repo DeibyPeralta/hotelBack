@@ -237,13 +237,21 @@ const historial = async (schema:string ) => {
         await client.query(`SET search_path TO ${schema}`);  
 
         const queryResult = await client.query(`
-            SELECT h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida, s.placa, 
-					h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, h.valor_parqueo, h.notaJustificante,
-                    h.efectivo_valor_parqueo, h.num_factura, valor_factura, h.valor_tienda, s.nombre, h.fechasalida, h.fechasistema, h.efectivo_valor_ropa, h.ropa, h.registered_by
+            SELECT 
+                h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida,
+                h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, 
+                h.valor_parqueo, h.notaJustificante, h.efectivo_valor_parqueo, h.num_factura, 
+                valor_factura, h.valor_tienda, h.fechasalida, h.fechasistema, 
+                h.efectivo_valor_ropa, h.ropa, h.registered_by, s.nombre,
+                STRING_AGG(s.placa, ', ') AS placas
             FROM historial h 
-            LEFT JOIN socios s 
-                ON h.cod_Socio = s.cod_socio 
-            ORDER by h.fechasistema DESC;`);
+            LEFT JOIN socios s ON h.cod_Socio = s.cod_socio
+            GROUP BY h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida, 
+                h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, 
+                h.valor_parqueo, h.notaJustificante, h.efectivo_valor_parqueo, h.num_factura, 
+                valor_factura, h.valor_tienda, h.fechasalida, h.fechasistema, 
+                h.efectivo_valor_ropa, h.ropa, h.registered_by, s.nombre
+            ORDER BY h.fechasistema DESC`);
 
         return {
             isError: false,

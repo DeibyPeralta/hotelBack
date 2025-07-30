@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -73,28 +63,28 @@ app.use(fileUpload());
 app.use(body_parser_1.default.json({ limit: '500mb' }));
 app.use(body_parser_1.default.urlencoded({ extended: false, limit: '500mb' }));
 app.use(express_1.default.static(path_1.default.join(__dirname, '..', 'public')));
-app.use((req, res, next) => {
-    const host = req.headers.host || '';
-    const subdomain = host.split('.')[0];
-    console.log('paso 44:', host);
-    console.log('paso 45:', subdomain);
-    console.log('🛰️ Subdominio detectado:', subdomain);
-    // Reescribimos 'desarrollo' como 'valle'
-    let schema = subdomain;
-    if (subdomain === 'desarrollo') {
-        schema = 'valle';
-    }
-    if (schema === 'valle' || schema === 'cucuta') {
-        req.schema = schema;
-        return next();
-    }
-    // Permitimos pruebas locales (curl, localhost)
-    if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
-        req.schema = 'valle'; // por defecto para pruebas
-        return next();
-    }
-    return res.status(400).json({ message: 'Subdominio no válido' });
-});
+// app.use((req: Request, res: Response, next: NextFunction) => {
+//   const host = req.headers.host || '';
+//   const subdomain = host.split('.')[0];
+//   console.log('paso 44:', host);
+//   console.log('paso 45:', subdomain);
+//   console.log('🛰️ Subdominio detectado:', subdomain);
+//   // Reescribimos 'desarrollo' como 'valle'
+//   let schema = subdomain;
+//   if (subdomain === 'desarrollo') {
+//     schema = 'valle';
+//   }
+//   if (schema === 'valle' || schema === 'cucuta') {
+//     (req as any).schema = schema;
+//     return next();
+//   }
+//   // Permitimos pruebas locales (curl, localhost)
+//   if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+//     (req as any).schema = 'valle'; // por defecto para pruebas
+//     return next();
+//   }
+//   return res.status(400).json({ message: 'Subdominio no válido' });
+// });
 // 🧠 Middleware de subdominio
 // app.use((req: Request, res: Response, next: NextFunction) => {
 //   const host = req.headers.host || '';
@@ -111,19 +101,20 @@ app.use((req, res, next) => {
 //   return res.status(400).json({ message: 'Subdominio no válido' });
 // });
 // 🧠 Middleware de subdominio
-// app.use((req: Request, res: Response, next: NextFunction) => {
-//   const subdomain = req.headers['x-subdomain'] as string;
-//   if (subdomain === 'valle' || subdomain === 'cucuta') {
-//     req.schema = subdomain;
-//     return next();
-//   }
-//   // fallback para localhost
-//   if (req.headers.host?.startsWith('localhost')) {
-//     req.schema = 'valle';
-//     return next();
-//   }
-//   return res.status(400).json({ message: 'Subdominio no válido' });
-// });
+app.use((req, res, next) => {
+    var _a;
+    const subdomain = req.headers['x-subdomain'];
+    if (subdomain === 'valle' || subdomain === 'cucuta') {
+        req.schema = subdomain;
+        return next();
+    }
+    // fallback para localhost
+    if ((_a = req.headers.host) === null || _a === void 0 ? void 0 : _a.startsWith('localhost')) {
+        req.schema = 'valle';
+        return next();
+    }
+    return res.status(400).json({ message: 'Subdominio no válido' });
+});
 // Rutas
 const login_routes_1 = __importDefault(require("./ruta/usuarios/login.routes"));
 const tablero_routes_1 = __importDefault(require("./ruta/tablero/tablero.routes"));

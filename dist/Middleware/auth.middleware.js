@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.autenticarMiddleware = autenticarMiddleware;
+exports.autenticarMiddleware = void 0;
 const auth_1 = require("../config/auth");
 function autenticarMiddleware(req, res, next) {
     var _a;
@@ -18,3 +18,4 @@ function autenticarMiddleware(req, res, next) {
         res.status(401).json({ mensaje: 'Token inválido' });
     }
 }
+exports.autenticarMiddleware = autenticarMiddleware;
