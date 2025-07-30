@@ -12,12 +12,12 @@ const app = express();
 
 // CORS
 const allowedOrigins = [
-  'https://valle.parqueaderosantacruz.shop',
-  'http://valle.parqueaderosantacruz.shop:4200',
-  'http://cucuta.parqueaderosantacruz.shop:4200',
   'https://cucuta.parqueaderosantacruz.shop',
-  'http://localhost:3333',
-  'http://localhost:4200' // solo para pruebas locales
+  'https://valle.parqueaderosantacruz.shop',
+  // 'http://valle.parqueaderosantacruz.shop:4200',
+  // 'http://cucuta.parqueaderosantacruz.shop:4200',
+  // 'http://localhost:3333',
+  // 'http://localhost:4200' // solo para pruebas locales
 ];
 
 app.use(cors({
@@ -40,7 +40,7 @@ app.use(bodyParser.json({ limit: '500mb' }));
 app.use(bodyParser.urlencoded({ extended: false, limit: '500mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-
+// 🧠 Middleware de subdominio local
 // app.use((req: Request, res: Response, next: NextFunction) => {
 //   const host = req.headers.host || '';
 //   const subdomain = host.split('.')[0];
@@ -51,7 +51,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 //   // Reescribimos 'desarrollo' como 'valle'
 //   let schema = subdomain;
 //   if (subdomain === 'desarrollo') {
-//     schema = 'valle';
+//     schema = 'cucuta';
 //   }
   
 //   if (schema === 'valle' || schema === 'cucuta') {
@@ -69,26 +69,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // });
 
 
-// 🧠 Middleware de subdominio
-// app.use((req: Request, res: Response, next: NextFunction) => {
-//   const host = req.headers.host || '';
-//   const subdomain = host.split('.')[0];
-
-//   if (subdomain === 'valle' || subdomain === 'cucuta') {
-//     (req as any).schema = subdomain;
-//     return next();
-//   }
-
-//   // Permitimos pruebas locales (curl, localhost)
-//   if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
-//     (req as any).schema = 'valle'; // por defecto para pruebas
-//     return next();
-//   }
-
-//   return res.status(400).json({ message: 'Subdominio no válido' });
-// });
-
-// 🧠 Middleware de subdominio
+// 🧠 Middleware de subdominio prod
 app.use((req: Request, res: Response, next: NextFunction) => {
   const subdomain = req.headers['x-subdomain'] as string;
 

@@ -109,7 +109,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
 
         const response: any = await tableroService.historialHabitaciones(req.body, schema);
 
-        return res.status(200).json(response.data);
+        return res.status(200).json(response);
     } catch (error) {
         console.log("ERROR ");
         console.log(error);

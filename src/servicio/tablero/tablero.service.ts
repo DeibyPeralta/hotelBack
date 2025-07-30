@@ -251,7 +251,7 @@ const historial = async (schema:string ) => {
                 h.valor_parqueo, h.notaJustificante, h.efectivo_valor_parqueo, h.num_factura, 
                 valor_factura, h.valor_tienda, h.fechasalida, h.fechasistema, 
                 h.efectivo_valor_ropa, h.ropa, h.registered_by, s.nombre
-            ORDER BY h.fechasistema DESC`);
+            ORDER BY h.id DESC`);
 
         return {
             isError: false,
@@ -332,10 +332,20 @@ const editar_tablero = async ( body: any, schema: string) => {
 
         await client.query(`SET search_path TO ${schema}`);
 
-        await client.query(`UPDATE tablero SET  hora_llegada = $1, aseo = $2, llamada = $3, destino = $4
-            WHERE  num_habicion = $5 OR interno = $6`, 
-            [body.hora_llegada, body.aseo, body.llamada, body.destino, body.num_habitacion, body.interno]);
-    
+        const query = `UPDATE tablero SET  hora_llegada = $1, aseo = $2, llamada = $3, destino = $4
+            WHERE  num_habitacion = $5 OR interno = $6`
+
+            const values = [body.hora_llegada, body.aseo, body.llamada, body.destino, body.num_habitacion, body.interno]
+
+            await client.query(query, values);
+        console.log('QUERY PARA DEBUG:');
+        console.log(
+            query.replace(/\$\d+/g, (match) => {
+                const index = parseInt(match.substring(1)) - 1;
+                const val = values[index];
+                return typeof val === 'string' ? `'${val}'` : val;
+            })
+        );
         return {
             isError: false,
             data: 'ok'
