@@ -12,12 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveEmpresa = void 0;
+exports.resolveEmpresa = resolveEmpresa;
 const dbConfig_1 = __importDefault(require("../config/dbConfig"));
 const pool = dbConfig_1.default.pool;
 function resolveEmpresa(req, res, next) {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         const subdominio = (_a = req.headers.host) === null || _a === void 0 ? void 0 : _a.split('.')[0];
         if (!subdominio)
             return res.status(400).send('Subdominio no encontrado');
@@ -32,4 +32,3 @@ function resolveEmpresa(req, res, next) {
         next();
     });
 }
-exports.resolveEmpresa = resolveEmpresa;

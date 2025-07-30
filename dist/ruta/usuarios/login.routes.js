@@ -11,5 +11,6 @@ router.post('/registro', login_controller_1.default.registerUser);
 router.get('/permisos', login_controller_1.default.permisos);
 router.post('/edit-permisos', login_controller_1.default.editPermisos);
 router.delete('/delete-users/:id', login_controller_1.default.deleteUsers);
-// router.get('/captureFingerprint', loginController.captureFingerprint);
+router.post('/verificar-huella', login_controller_1.default.verificarHuella);
+router.post('/capture-huella', login_controller_1.default.captureHuella);
 exports.default = router;

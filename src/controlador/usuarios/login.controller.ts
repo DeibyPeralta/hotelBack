@@ -1,7 +1,7 @@
 
 import { Request, Response, response } from "express";
 import loginService from '../../servicio/usuarios/login.service';
-
+import { Usuario } from "../../utils/huella";
 
 const login = async (req: Request, res: Response) => {
     try {
@@ -79,6 +79,47 @@ const deleteUsers = async (req: Request, res: Response) => {
     }
 }
 
+const verificarHuella = async (req: Request, res: Response) => {
+    try { 
+
+        const schema = (req as any).schema
+        const { huella_base64 } = req.body
+
+        if (!huella_base64)
+        return res.status(400).json({ error: "Huella base64 es requerida" })
+
+        const persona = await loginService.verificarHuella(huella_base64, schema)
+
+        if (persona) {
+            res.status(200).json({ encontrado: true, datos: persona })
+        } else {
+            res.status(404).json({ encontrado: false, mensaje: "Huella no encontrada" })
+        }     
+    } catch (error) {
+        throw error;
+    }
+}
+
+const captureHuella = async (req: Request, res: Response) => {
+    try { 
+        const schema = (req as any).schema
+  
+        const usuario: Usuario = {
+            nombre: req.body.nombre, 
+            apellido: req.body.apellido, 
+            cedula: req.body.cedula, 
+            telefono: req.body.telefono, 
+            huella_base64: req.body.huella, 
+        }
+        
+        await loginService.captureHuella(usuario, schema)
+
+        return res.status(201).json({mensaje: "Usuario registrado con éxito" })
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 
   
@@ -87,5 +128,7 @@ export default {
   registerUser,
   permisos,
   editPermisos,
-  deleteUsers
+  deleteUsers,
+  verificarHuella,
+  captureHuella
 }

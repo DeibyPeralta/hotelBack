@@ -167,6 +167,7 @@ const historialHabitaciones = async (body: any, schema: string) => {
         body.efectivo_valor_parqueo = body.efectivo_valor_porqueo || false;
 
         body.fechasistema = getCurrentDateTime();
+        body.fechaSalida = parseFecha(body.fechaSalida);
    
         const query = `
             INSERT INTO historial (
@@ -186,9 +187,6 @@ const historialHabitaciones = async (body: any, schema: string) => {
         ];
 
         await client.query(query, values);
-
-        await client.query(  `UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion] );
-
         // console.log('QUERY PARA DEBUG:');
         // console.log(
         //     query.replace(/\$\d+/g, (match) => {
@@ -197,6 +195,9 @@ const historialHabitaciones = async (body: any, schema: string) => {
         //         return typeof val === 'string' ? `'${val}'` : val;
         //     })
         // );
+
+        await client.query(  `UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion] );
+
 
         return {
             isError: false,
@@ -210,6 +211,11 @@ const historialHabitaciones = async (body: any, schema: string) => {
         client.release();
     }
 };
+
+function parseFecha(fecha: string): string {
+    const [dia, mes, anio] = fecha.split('/');
+    return `${anio}-${mes}-${dia}`;
+}
 
 function getCurrentDateTime(): string {
     const now = new Date();
@@ -491,9 +497,21 @@ const efectivo = async (body: any, schema: string) => {
 const updateBase = async (body: any, schema: string) => {
     const client = await pool.connect();
     try {
-        
+            console.log(`SET search_path TO ${schema}`)
         await client.query(`SET search_path TO ${schema}`);
-        await client.query(`update efectivoDia set efectivo =  $1 where id = 1`, [body.inputValue]);
+        const query = `update efectivoDia set efectivo =  $1 where id = 1`;
+        const value = [body.inputValue];
+
+        await client.query(query, value);
+
+        console.log('QUERY PARA DEBUG:');
+        console.log(
+            query.replace(/\$\d+/g, (match) => {
+                const index = parseInt(match.substring(1)) - 1;
+                const val = value[index];
+                return typeof val === 'string' ? `'${val}'` : val;
+            })
+        );
 
         return {
             isError: false,

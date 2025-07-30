@@ -177,6 +177,43 @@ const deleteUsers = (id, schema) => __awaiter(void 0, void 0, void 0, function* 
         client.release();
     }
 });
+const verificarHuella = (huella_base64, schema) => __awaiter(void 0, void 0, void 0, function* () {
+    const client = yield pool.connect();
+    try {
+        yield client.query(`SET search_path TO ${schema}`);
+        const query = `SELECT * FROM huellas WHERE huella_base64 = $1`;
+        const result = yield pool.query(query, [huella_base64]);
+        return result.rows[0] || null;
+    }
+    catch (error) {
+        console.error("ERROR al editar permisos del usuario:", error);
+        throw error;
+    }
+    finally {
+        client.release();
+    }
+});
+const captureHuella = (usuario, schema) => __awaiter(void 0, void 0, void 0, function* () {
+    const client = yield pool.connect();
+    try {
+        yield client.query(`SET search_path TO ${schema}`);
+        const { nombre, apellido, cedula, telefono, huella_base64 } = usuario;
+        const query = `INSERT INTO huellas (nombre, apellido, cedula, telefono, huella_base64) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+        const values = [nombre, apellido, cedula, telefono, huella_base64];
+        yield client.query(query, values);
+        return {
+            isError: false,
+            message: 'Usuario registrado'
+        };
+    }
+    catch (error) {
+        console.error("ERROR al editar permisos del usuario:", error);
+        throw error;
+    }
+    finally {
+        client.release();
+    }
+});
 // function printQueryWithValues(query: string, values: any[]) {
 //     // printQueryWithValues(validate, valueValidate);
 //   const interpolated = query.replace(/\$\d+/g, (match: string) => {
@@ -195,5 +232,7 @@ exports.default = {
     registerUser,
     permisos,
     editPermisos,
-    deleteUsers
+    deleteUsers,
+    verificarHuella,
+    captureHuella
 };

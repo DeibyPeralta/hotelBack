@@ -1,6 +1,7 @@
 import dbConfig  from "../../config/dbConfig";
 import bcrypt from "bcryptjs"; 
 import { generarToken } from '../../config/auth'
+import { Usuario } from "../../utils/huella";
 const pool = dbConfig.pool;
 const saltRounds = 10;
 
@@ -189,6 +190,48 @@ const deleteUsers = async (id: string, schema: string) => {
         client.release();
     }
 };
+
+const verificarHuella = async (huella_base64: string, schema: string) => {
+    const client = await pool.connect();
+    try {
+        await client.query(`SET search_path TO ${schema}`);
+
+        const query = `SELECT * FROM huellas WHERE huella_base64 = $1`
+        const result = await pool.query(query, [huella_base64])
+        
+        return result.rows[0] || null    
+    } catch (error) {
+      console.error("ERROR al editar permisos del usuario:", error);
+      throw error;
+    }finally {
+        client.release();
+    }
+};
+
+const captureHuella = async (usuario: Usuario, schema: string) => {
+    const client = await pool.connect();
+    try {
+        await client.query(`SET search_path TO ${schema}`);
+
+        const { nombre, apellido, cedula, telefono, huella_base64 } = usuario
+
+        const query = `INSERT INTO huellas (nombre, apellido, cedula, telefono, huella_base64) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+        
+        const values = [nombre, apellido, cedula, telefono, huella_base64]
+
+        await client.query(query, values); 
+
+            return {
+                isError: false,
+                message: 'Usuario registrado'
+            };
+    } catch (error) {
+      console.error("ERROR al editar permisos del usuario:", error);
+      throw error;
+    }finally {
+        client.release();
+    }
+};
   
 // function printQueryWithValues(query: string, values: any[]) {
 //     // printQueryWithValues(validate, valueValidate);
@@ -209,5 +252,7 @@ export default {
     registerUser,
     permisos,
     editPermisos,
-    deleteUsers
+    deleteUsers,
+    verificarHuella,
+    captureHuella
 }

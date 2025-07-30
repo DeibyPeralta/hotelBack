@@ -80,10 +80,47 @@ const deleteUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         throw error;
     }
 });
+const verificarHuella = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const schema = req.schema;
+        const { huella_base64 } = req.body;
+        if (!huella_base64)
+            return res.status(400).json({ error: "Huella base64 es requerida" });
+        const persona = yield login_service_1.default.verificarHuella(huella_base64, schema);
+        if (persona) {
+            res.status(200).json({ encontrado: true, datos: persona });
+        }
+        else {
+            res.status(404).json({ encontrado: false, mensaje: "Huella no encontrada" });
+        }
+    }
+    catch (error) {
+        throw error;
+    }
+});
+const captureHuella = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const schema = req.schema;
+        const usuario = {
+            nombre: req.body.nombre,
+            apellido: req.body.apellido,
+            cedula: req.body.cedula,
+            telefono: req.body.telefono,
+            huella_base64: req.body.huella,
+        };
+        yield login_service_1.default.captureHuella(usuario, schema);
+        return res.status(201).json({ mensaje: "Usuario registrado con éxito" });
+    }
+    catch (error) {
+        throw error;
+    }
+});
 exports.default = {
     login,
     registerUser,
     permisos,
     editPermisos,
-    deleteUsers
+    deleteUsers,
+    verificarHuella,
+    captureHuella
 };

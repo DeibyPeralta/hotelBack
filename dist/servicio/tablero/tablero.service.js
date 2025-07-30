@@ -161,6 +161,7 @@ const historialHabitaciones = (body, schema) => __awaiter(void 0, void 0, void 0
         body.efectivo_valor_lavado = body.efectivo_valor_lavado || false;
         body.efectivo_valor_parqueo = body.efectivo_valor_porqueo || false;
         body.fechasistema = getCurrentDateTime();
+        body.fechaSalida = parseFecha(body.fechaSalida);
         const query = `
             INSERT INTO historial (
                 num_habitacion, hora_llegada, llamada, interno, placa, aseo, valor_hospedaje, valor_lavado, valor_parqueo, num_factura, valor_factura, 
@@ -177,7 +178,6 @@ const historialHabitaciones = (body, schema) => __awaiter(void 0, void 0, void 0
             body.ropa, body.usuario
         ];
         yield client.query(query, values);
-        yield client.query(`UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion]);
         // console.log('QUERY PARA DEBUG:');
         // console.log(
         //     query.replace(/\$\d+/g, (match) => {
@@ -186,6 +186,7 @@ const historialHabitaciones = (body, schema) => __awaiter(void 0, void 0, void 0
         //         return typeof val === 'string' ? `'${val}'` : val;
         //     })
         // );
+        yield client.query(`UPDATE habitaciones SET estado = 'Disponible' WHERE num_habitacion = $1`, [body.num_habitacion]);
         return {
             isError: false,
             data: 'Registro exitoso'
@@ -200,6 +201,10 @@ const historialHabitaciones = (body, schema) => __awaiter(void 0, void 0, void 0
         client.release();
     }
 });
+function parseFecha(fecha) {
+    const [dia, mes, anio] = fecha.split('/');
+    return `${anio}-${mes}-${dia}`;
+}
 function getCurrentDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -446,8 +451,17 @@ const efectivo = (body, schema) => __awaiter(void 0, void 0, void 0, function* (
 const updateBase = (body, schema) => __awaiter(void 0, void 0, void 0, function* () {
     const client = yield pool.connect();
     try {
+        console.log(`SET search_path TO ${schema}`);
         yield client.query(`SET search_path TO ${schema}`);
-        yield client.query(`update efectivoDia set efectivo =  $1 where id = 1`, [body.inputValue]);
+        const query = `update efectivoDia set efectivo =  $1 where id = 1`;
+        const value = [body.inputValue];
+        yield client.query(query, value);
+        console.log('QUERY PARA DEBUG:');
+        console.log(query.replace(/\$\d+/g, (match) => {
+            const index = parseInt(match.substring(1)) - 1;
+            const val = value[index];
+            return typeof val === 'string' ? `'${val}'` : val;
+        }));
         return {
             isError: false,
             data: 'Data insertada'
@@ -478,7 +492,7 @@ const historialcajaBase = (schema) => __awaiter(void 0, void 0, void 0, function
         client.release();
     }
 });
-const historialGraficos = (filtros = {}, schema) => __awaiter(void 0, void 0, void 0, function* () {
+const historialGraficos = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filtros = {}, schema) {
     const client = yield pool.connect();
     try {
         yield client.query(`SET search_path TO ${schema}`);
