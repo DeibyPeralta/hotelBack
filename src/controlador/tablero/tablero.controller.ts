@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import tableroService from '../../servicio/tablero/tablero.service';
 
-const 
-vista = async (req: Request, res: Response) => {
+const vista = async (req: Request, res: Response) => {
     try {
         const schema = (req as any).schema;
  
@@ -98,6 +97,7 @@ const historialHabitaciones = async (req: Request, res: Response) => {
         const schema = (req as any).schema;
         const { socio } = req.body; 
 
+       
         const validateSocio = await tableroService.validateSocio(socio, schema);
 
         if (validateSocio.isError || !validateSocio.data) {
@@ -328,6 +328,46 @@ const internoPlaca = async (req: Request, res: Response) => {
     }
 }
 
+const inventarioTienda = async (req: Request, res: Response) => {
+    try { 
+        const schema = (req as any).schema;
+        const response = await tableroService.inventarioTienda( schema );
+      
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const registerPedidoTienda = async (req: Request, res: Response) => {
+    try { 
+        const schema = (req as any).schema;
+
+        const response = await tableroService.registerPedidoTienda( req.body, schema );
+      
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
+const selectorTienda = async (req: Request, res: Response) => {
+    try { 
+        const schema = (req as any).schema;
+        const response = await tableroService.selectorTienda( schema );
+      
+        return res.status(200).json(response.data);
+    } catch (error) {
+        console.log("ERROR ");
+        console.log(error);
+        throw error;
+    }
+}
+
 export default {
     vista, 
     maxhabitaciones, 
@@ -351,5 +391,8 @@ export default {
     insertGastosDiarios,
     getGastosDiarios,
     totalGastosDiarios,
-    internoPlaca
+    internoPlaca, 
+    inventarioTienda,
+    registerPedidoTienda,
+    selectorTienda
 }

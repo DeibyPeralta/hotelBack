@@ -25,5 +25,8 @@ router.post('/insert-gastos-diarios', tableroController.insertGastosDiarios);
 router.get('/get-all-gastos-diarios', tableroController.getGastosDiarios);
 router.get('/total-gastos-diarios', tableroController.totalGastosDiarios);
 router.get('/interno-placa/:interno', tableroController.internoPlaca);
+router.get('/inventario-tienda', tableroController.inventarioTienda);
+router.post('/register-pedido-tienda', tableroController.registerPedidoTienda);
+router.get('/selector-tienda', tableroController.selectorTienda);
 
 export default router;

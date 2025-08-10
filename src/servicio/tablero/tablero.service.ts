@@ -7,19 +7,37 @@ const vista = async (schema: string) => {
     try {
        
         await client.query(`SET search_path TO ${schema}`);       
+        const dataWithProducts = [];
 
         const queryResult = await client.query(`
-            SELECT h.num_habitacion, h.estado, t.interno, t.hora_llegada, 
-                   t.aseo, t.llamada, t.destino, s.placa, s.nombre, 
-                   s.cod_socio, s.placa
-            FROM habitaciones h 
-            LEFT JOIN tablero t ON h.num_habitacion = t.num_habitacion 
-            LEFT JOIN socios s ON t.interno = s.cod_interno
+            SELECT h.num_habitacion,h.estado,t.interno,t.hora_llegada,t.aseo,t.llamada,t.destino,s.placa,s.nombre,s.cod_socio,SUM(ps.precio) AS tienda
+            FROM habitaciones h
+            LEFT JOIN tablero t 
+                ON h.num_habitacion = t.num_habitacion 
+            LEFT JOIN socios s 
+                ON t.interno = s.cod_interno
+            LEFT JOIN valle.productos_solicitados ps
+                ON h.num_habitacion = ps.num_habitacion
+            GROUP BY h.num_habitacion, h.estado, t.interno, t.hora_llegada, t.aseo, t.llamada, t.destino, s.placa, s.nombre, s.cod_socio
             ORDER BY h.num_habitacion ASC `);
         
+        for (const hab of queryResult.rows) {
+            const productsRes = await client.query(
+                `SELECT producto, nombre_usuario
+                    FROM productos_solicitados
+                    WHERE num_habitacion = $1`,
+                [hab.num_habitacion]
+            );
+
+            dataWithProducts.push({
+                ...hab,
+                productos: productsRes.rows
+            });
+        }
+
         return {
             isError: false,
-            data: queryResult.rows
+            data: dataWithProducts
         };
     } catch (error) {
         console.error("ERROR al obtener datos del tablero:", error);
@@ -158,6 +176,25 @@ const historialHabitaciones = async (body: any, schema: string) => {
  
         await client.query(`SET search_path TO ${schema}`);   
 
+        await client.query('BEGIN');
+
+        await client.query(`
+            INSERT INTO historial_productos_solicitados (
+                num_habitacion, interno, producto, precio, nombre_usuario, fecha_solicitud
+            )
+            SELECT
+                num_habitacion, interno, producto, precio, nombre_usuario, fecha_solicitud
+            FROM productos_solicitados
+            WHERE num_habitacion = $1 `, [body.num_habitacion]);
+    
+        await client.query(`
+            DELETE FROM productos_solicitados
+            WHERE num_habitacion = $1 `, [body.num_habitacion]);
+    
+        await client.query('COMMIT');
+        
+
+
         body.efectivo_valor_factura = body.efectivo_valor_factura || false;
         body.efectivo_valor_ropa = body.efectivo_valor_ropa || false;
         body.efectivo_tienda = body.efectivo_tienda || false;
@@ -237,21 +274,15 @@ const historial = async (schema:string ) => {
         await client.query(`SET search_path TO ${schema}`);  
 
         const queryResult = await client.query(`
-            SELECT 
+            SELECT DISTINCT ON (h.num_factura)
                 h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida,
                 h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, 
                 h.valor_parqueo, h.notaJustificante, h.efectivo_valor_parqueo, h.num_factura, 
                 valor_factura, h.valor_tienda, h.fechasalida, h.fechasistema, 
-                h.efectivo_valor_ropa, h.ropa, h.registered_by, s.nombre,
-                STRING_AGG(s.placa, ', ') AS placas
-            FROM historial h 
-            LEFT JOIN socios s ON h.cod_Socio = s.cod_socio
-            GROUP BY h.id, interno, num_habitacion, hora_llegada, comentario, hora_salida, 
-                h.valor_hospedaje, h.efectivo_valor_hospedaje, valor_lavado, h.efectivo_valor_lavado, 
-                h.valor_parqueo, h.notaJustificante, h.efectivo_valor_parqueo, h.num_factura, 
-                valor_factura, h.valor_tienda, h.fechasalida, h.fechasistema, 
                 h.efectivo_valor_ropa, h.ropa, h.registered_by, s.nombre
-            ORDER BY h.id DESC`);
+            FROM valle.historial h 
+            LEFT JOIN valle.socios s ON h.cod_Socio = s.cod_socio
+            ORDER BY h.num_factura, h.fechasistema DESC`);
 
         return {
             isError: false,
@@ -475,7 +506,7 @@ const efectivo = async (body: any, schema: string) => {
         const baseNumber = parseFloat(baseString.replace('.', '').replace(',', '.'));
         const totalString = body.total.replace('$', '').replace(/\s/g, '');
         const totalNumber = parseFloat(totalString.replace('.', '').replace(',', '.'));
-        const pagosRealizadosString = body.pagosRealizados.replace('$', '').replace(/\s/g, '');
+        const pagosRealizadosString = String(body.pagosRealizados || '0').replace('$', '').replace(/\s/g, '');
         const pagosRealizadosNumber = parseFloat(pagosRealizadosString.replace('.', '').replace(',', '.'));
     
         const processedData = {
@@ -486,7 +517,7 @@ const efectivo = async (body: any, schema: string) => {
         };
     
         const { rowCount } = await client.query(`SELECT 1 FROM historialEfectivo WHERE turno = $1 AND fechaturno = CURRENT_DATE`, [body.turno] );
-    
+        
         if (rowCount === 0) {
             await client.query(
             `INSERT INTO historialEfectivo (base, efectivoDia, total, usuario, turno, pagosdeldia, fechaturno)
@@ -504,7 +535,7 @@ const efectivo = async (body: any, schema: string) => {
         data: rowCount === 0 ? 'Data insertada' : 'Ya existía un registro para este turno'
       };
     } catch (error) {
-      console.error('ERROR al insertar el flujo de caja en la base de datos.');
+      console.error('ERROR al insertar el flujo de caja en la base de datos linea 501.');
       console.error(error);
       throw error;
     }finally {
@@ -720,6 +751,74 @@ const internoPlaca = async (interno: string, schema: string) => {
     }
 }
 
+const inventarioTienda = async (schema: string) => {
+    const client = await pool.connect();
+    try {
+        
+        await client.query(`SET search_path TO ${schema}`);
+  
+        const queryResult = await client.query(`SELECT id, code, producto, categoria, precio, cantidad, unidad, fecha_ingreso, fecha_actualizacion, estado FROM valle.inventario_tienda`);
+        
+        return {
+            isError: false,
+            data: queryResult.rows[0]
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }finally {
+        client.release();
+    }
+}
+
+const registerPedidoTienda = async (body: any, schema: string) => {
+    const client = await pool.connect();
+    try {
+         await client.query(`SET search_path TO ${schema}`);
+  
+        const query = await client.query(`SELECT id, producto, precio FROM inventario_tienda WHERE id = $1`, [body.productoSolicitado] );
+            // console.log(query.rows[0])
+            
+        const queryResult = await client.query(`INSERT INTO productos_solicitados (
+                    num_habitacion, interno, producto, precio, nombre_usuario
+                ) VALUES ( $1, $2, $3, $4, $5 )`, [body.num_habitacion, body.interno, query.rows[0].producto, query.rows[0].precio, body.nombre_usuario]);
+        
+        return {
+            isError: false,
+            data: 'Data registrada'
+        };
+      
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }finally {
+        client.release();
+    }
+}
+
+const selectorTienda = async (schema: string) => {
+    const client = await pool.connect();
+    try {
+        
+        await client.query(`SET search_path TO ${schema}`);
+  
+        const queryResult = await client.query(`SELECT id, code, producto FROM valle.inventario_tienda`);
+        
+        return {
+            isError: false,
+            data: queryResult.rows
+        };
+    } catch (error) {
+        console.log("ERROR al registrar usuario en la base de datos.");
+        console.log(error);
+        throw error;
+    }finally {
+        client.release();
+    }
+}
+
 // function printQueryWithValues(query: string, values: any[]) {
 //     // printQueryWithValues(validate, valueValidate);
 //   const interpolated = query.replace(/\$\d+/g, (match: string) => {
@@ -758,5 +857,8 @@ export default {
     habitacionesDisponibles,
     insertGastosDiarios,
     getGastosDiarios,
-    internoPlaca
+    internoPlaca,
+    inventarioTienda,
+    selectorTienda,
+    registerPedidoTienda
 }

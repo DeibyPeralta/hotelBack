@@ -14,7 +14,7 @@ const app = express();
 const allowedOrigins = [
   'https://cucuta.parqueaderosantacruz.shop',
   'https://valle.parqueaderosantacruz.shop',
-  // 'http://valle.parqueaderosantacruz.shop:4200',
+  'http://valle.parqueaderosantacruz.shop:4200',
   // 'http://cucuta.parqueaderosantacruz.shop:4200',
   // 'http://localhost:3333',
   // 'http://localhost:4200' // solo para pruebas locales
@@ -41,51 +41,51 @@ app.use(bodyParser.urlencoded({ extended: false, limit: '500mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // 🧠 Middleware de subdominio local
-// app.use((req: Request, res: Response, next: NextFunction) => {
-//   const host = req.headers.host || '';
-//   const subdomain = host.split('.')[0];
-//   console.log('paso 44:', host);
-//   console.log('paso 45:', subdomain);
-//   console.log('🛰️ Subdominio detectado:', subdomain);
-
-//   // Reescribimos 'desarrollo' como 'valle'
-//   let schema = subdomain;
-//   if (subdomain === 'desarrollo') {
-//     schema = 'cucuta';
-//   }
-  
-//   if (schema === 'valle' || schema === 'cucuta') {
-//     (req as any).schema = schema;
-//     return next();
-//   }
-
-//   // Permitimos pruebas locales (curl, localhost)
-//   if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
-//     (req as any).schema = 'valle'; // por defecto para pruebas
-//     return next();
-//   }
-
-//   return res.status(400).json({ message: 'Subdominio no válido' });
-// });
-
-
-// 🧠 Middleware de subdominio prod
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const subdomain = req.headers['x-subdomain'] as string;
-
-  if (subdomain === 'valle' || subdomain === 'cucuta') {
-    req.schema = subdomain;
+  const host = req.headers.host || '';
+  const subdomain = host.split('.')[0];
+  
+  console.log('🛰️ Subdominio detectado:', subdomain);
+  
+  // Reescribimos 'desarrollo' como 'valle'
+  let schema = subdomain;
+  if (subdomain === 'desarrollo') {
+    schema = 'valle';
+  }
+  
+  console.log('🛰️ Subdominio detectado despues de ajuste:', schema);
+  if (schema === 'valle' || schema === 'cucuta') {
+    (req as any).schema = schema;
     return next();
   }
 
-  // fallback para localhost
-  if (req.headers.host?.startsWith('localhost')) {
-    req.schema = 'valle';
+//   // Permitimos pruebas locales (curl, localhost)
+  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+    (req as any).schema = 'valle'; // por defecto para pruebas
     return next();
   }
 
   return res.status(400).json({ message: 'Subdominio no válido' });
 });
+
+
+// 🧠 Middleware de subdominio prod
+// app.use((req: Request, res: Response, next: NextFunction) => {
+//   const subdomain = req.headers['x-subdomain'] as string;
+
+//   if (subdomain === 'valle' || subdomain === 'cucuta') {
+//     req.schema = subdomain;
+//     return next();
+//   }
+
+//   // fallback para localhost
+//   if (req.headers.host?.startsWith('localhost')) {
+//     req.schema = 'valle';
+//     return next();
+//   }
+
+//   return res.status(400).json({ message: 'Subdominio no válido' });
+// });
 
 
 // Rutas
