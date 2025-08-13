@@ -10,7 +10,7 @@ const vista = async (schema: string) => {
         const dataWithProducts = [];
 
         const queryResult = await client.query(`
-            SELECT h.num_habitacion,h.estado,t.interno,t.hora_llegada,t.aseo,t.llamada,t.destino,s.placa,s.nombre,s.cod_socio,SUM(ps.precio) AS tienda
+            SELECT h.num_habitacion,h.estado,t.interno,t.hora_llegada,t.aseo,t.llamada,t.destino,s.placa,s.nombre,s.cod_socio, SUM(COALESCE(ps.cantidad, 0) * COALESCE(ps.precio, 0)) AS tienda
             FROM habitaciones h
             LEFT JOIN tablero t 
                 ON h.num_habitacion = t.num_habitacion 
@@ -23,7 +23,7 @@ const vista = async (schema: string) => {
         
         for (const hab of queryResult.rows) {
             const productsRes = await client.query(
-                `SELECT producto, nombre_usuario
+                `SELECT producto, nombre_usuario, cantidad, precio
                     FROM productos_solicitados
                     WHERE num_habitacion = $1`,
                 [hab.num_habitacion]
